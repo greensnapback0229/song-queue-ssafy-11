@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getDb } from '@/lib/db';
 import { QueueItem } from '@/types';
+import { verifyPassword } from '@/lib/auth';
 
 export async function GET() {
   try {
@@ -18,6 +19,12 @@ export async function GET() {
 }
 
 export async function POST(request: NextRequest) {
+  // Verify admin password
+  const password = request.headers.get('x-admin-password');
+  if (!verifyPassword(password)) {
+    return NextResponse.json({ error: '관리자 권한이 필요합니다' }, { status: 401 });
+  }
+
   try {
     const body = await request.json();
     const { name, reason, direction = 'back' } = body;

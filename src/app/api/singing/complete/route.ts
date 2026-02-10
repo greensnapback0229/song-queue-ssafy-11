@@ -1,5 +1,6 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { getDb } from '@/lib/db';
+import { verifyPassword } from '@/lib/auth';
 
 export interface SongHistory {
   id: number;
@@ -17,7 +18,13 @@ export interface SingingSession {
   started_at: string;
 }
 
-export async function POST() {
+export async function POST(request: NextRequest) {
+  // Verify admin password
+  const password = request.headers.get('x-admin-password');
+  if (!verifyPassword(password)) {
+    return NextResponse.json({ error: '관리자 권한이 필요합니다' }, { status: 401 });
+  }
+
   try {
     const db = getDb();
 

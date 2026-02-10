@@ -3,8 +3,10 @@
 import { useEffect, useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import type { SingingSession, Comment } from '@/types';
+import { useAdmin } from '@/context/AdminContext';
 
 export default function SingingPage() {
+  const { isAdmin, password } = useAdmin();
   const router = useRouter();
   const [session, setSession] = useState<SingingSession | null>(null);
   const [comments, setComments] = useState<Comment[]>([]);
@@ -120,13 +122,16 @@ export default function SingingPage() {
   };
 
   const handleComplete = async () => {
-    if (!session || isCompleting) return;
+    if (!session || isCompleting || !isAdmin) return;
 
     setIsCompleting(true);
     try {
       const res = await fetch('/api/singing/complete', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          'x-admin-password': password,
+        },
         body: JSON.stringify({ session_id: session.id })
       });
 
@@ -186,13 +191,15 @@ export default function SingingPage() {
             </div>
           </div>
 
-          <button
-            onClick={handleComplete}
-            disabled={isCompleting}
-            className="mt-12 px-12 py-4 bg-green-600 hover:bg-green-700 disabled:bg-gray-600 text-white text-2xl font-bold rounded-lg shadow-xl transition-colors"
-          >
-            {isCompleting ? '처리 중...' : '노래 완료'}
-          </button>
+          {isAdmin && (
+            <button
+              onClick={handleComplete}
+              disabled={isCompleting}
+              className="mt-12 px-12 py-4 bg-green-600 hover:bg-green-700 disabled:bg-gray-600 text-white text-2xl font-bold rounded-lg shadow-xl transition-colors"
+            >
+              {isCompleting ? '처리 중...' : '노래 완료'}
+            </button>
+          )}
         </div>
       </div>
 

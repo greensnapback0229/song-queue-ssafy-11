@@ -6,8 +6,10 @@ import { QueueItem } from '@/types';
 import EnqueueForm from '@/components/Queue/EnqueueForm';
 import QueueList from '@/components/Queue/QueueList';
 import DequeueModal from '@/components/Queue/DequeueModal';
+import { useAdmin } from '@/context/AdminContext';
 
 export default function Home() {
+  const { isAdmin, password } = useAdmin();
   const [items, setItems] = useState<QueueItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -29,9 +31,17 @@ export default function Home() {
   };
 
   const handleDelete = async (id: number) => {
+    if (!isAdmin) {
+      alert('관리자만 삭제할 수 있습니다.');
+      return;
+    }
+
     try {
       const response = await fetch(`/api/queue/${id}`, {
         method: 'DELETE',
+        headers: {
+          'x-admin-password': password,
+        },
       });
 
       if (!response.ok) {
@@ -100,8 +110,9 @@ export default function Home() {
           <div className="flex items-center gap-4">
             <button
               onClick={handleStartSinging}
-              disabled={items.length === 0}
+              disabled={items.length === 0 || !isAdmin}
               className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-sm font-medium"
+              title={!isAdmin ? '관리자만 노래를 시작할 수 있습니다' : ''}
             >
               노래 시작
             </button>

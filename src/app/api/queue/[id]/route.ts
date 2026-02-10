@@ -1,11 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getDb } from '@/lib/db';
 import { QueueItem } from '@/types';
+import { verifyPassword } from '@/lib/auth';
 
 export async function DELETE(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  // Verify admin password
+  const password = request.headers.get('x-admin-password');
+  if (!verifyPassword(password)) {
+    return NextResponse.json({ error: '관리자 권한이 필요합니다' }, { status: 401 });
+  }
+
   try {
     const { id: idParam } = await params;
     const id = parseInt(idParam, 10);

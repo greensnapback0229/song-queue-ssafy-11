@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { QueueItem } from '@/types';
+import { useAdmin } from '@/context/AdminContext';
 
 interface DequeueModalProps {
   isOpen: boolean;
@@ -16,6 +17,7 @@ export default function DequeueModal({
   onClose,
   onStart,
 }: DequeueModalProps) {
+  const { password } = useAdmin();
   const [songTitle, setSongTitle] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
@@ -33,6 +35,7 @@ export default function DequeueModal({
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'x-admin-password': password,
         },
         body: JSON.stringify({ song_title: songTitle.trim() }),
       });

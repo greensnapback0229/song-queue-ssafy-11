@@ -1,17 +1,35 @@
 'use client';
 
 import { useState } from 'react';
+import { useAdmin } from '@/context/AdminContext';
 
 interface EnqueueFormProps {
   onAdd: () => void;
 }
 
 export default function EnqueueForm({ onAdd }: EnqueueFormProps) {
+  const { isAdmin, password } = useAdmin();
   const [name, setName] = useState('');
   const [reason, setReason] = useState('');
   const [direction, setDirection] = useState<'front' | 'back'>('back');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
+
+  // Show message if not admin
+  if (!isAdmin) {
+    return (
+      <div className="bg-white rounded-lg shadow-sm p-6">
+        <div className="text-center py-8">
+          <p className="text-gray-600 text-lg">
+            관리자만 큐에 항목을 추가할 수 있습니다.
+          </p>
+          <p className="text-gray-500 text-sm mt-2">
+            우측 상단의 "관리자" 버튼을 클릭하여 로그인하세요.
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -29,6 +47,7 @@ export default function EnqueueForm({ onAdd }: EnqueueFormProps) {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'x-admin-password': password,
         },
         body: JSON.stringify({
           name: name.trim(),
