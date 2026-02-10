@@ -1,0 +1,40 @@
+export const QUEUE_ITEMS_TABLE = `
+CREATE TABLE IF NOT EXISTS queue_items (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  name TEXT NOT NULL,
+  reason TEXT NOT NULL,
+  position INTEGER NOT NULL,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+`;
+
+export const QUEUE_ITEMS_INDEX = `
+CREATE INDEX IF NOT EXISTS idx_queue_items_position ON queue_items(position);
+`;
+
+export const SONG_HISTORY_TABLE = `
+CREATE TABLE IF NOT EXISTS song_history (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  name TEXT NOT NULL,
+  reason TEXT NOT NULL,
+  song_title TEXT NOT NULL,
+  completed_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+`;
+
+export const SINGING_SESSION_TABLE = `
+CREATE TABLE IF NOT EXISTS singing_session (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  name TEXT NOT NULL,
+  reason TEXT NOT NULL,
+  song_title TEXT NOT NULL,
+  started_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+`;
+
+export const initializeSchema = (db: any) => {
+  db.exec(QUEUE_ITEMS_TABLE);
+  db.exec(QUEUE_ITEMS_INDEX);
+  db.exec(SONG_HISTORY_TABLE);
+  db.exec(SINGING_SESSION_TABLE);
+};

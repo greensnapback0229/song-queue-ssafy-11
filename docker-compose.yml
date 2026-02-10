@@ -1,0 +1,18 @@
+version: '3.8'
+
+services:
+  song-queue:
+    build: .
+    container_name: song-queue
+    ports:
+      - "45000:3000"
+    volumes:
+      - song-queue-data:/app/data
+    restart: unless-stopped
+    environment:
+      - NODE_ENV=production
+      - PORT=3000
+
+volumes:
+  song-queue-data:
+    driver: local
