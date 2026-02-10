@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { QueueItem } from '@/types';
 import EnqueueForm from '@/components/Queue/EnqueueForm';
@@ -15,6 +15,7 @@ export default function Home() {
   const [isLoading, setIsLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const router = useRouter();
+  const wsRef = useRef<WebSocket | null>(null);
 
   const fetchQueue = async () => {
     try {
@@ -58,6 +59,45 @@ export default function Home() {
 
   useEffect(() => {
     fetchQueue();
+  }, []);
+
+  // WebSocket 연결 (랜덤 뽑기 브로드캐스트용)
+  useEffect(() => {
+    let isMounted = true;
+    let reconnectTimer: ReturnType<typeof setTimeout>;
+
+    const connect = () => {
+      const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+      const ws = new WebSocket(`${protocol}//${window.location.host}/ws`);
+
+      ws.onopen = () => {
+        if (isMounted) {
+          wsRef.current = ws;
+        }
+      };
+
+      ws.onclose = () => {
+        if (isMounted) {
+          wsRef.current = null;
+          reconnectTimer = setTimeout(connect, 3000);
+        }
+      };
+
+      ws.onerror = () => {
+        ws.close();
+      };
+    };
+
+    connect();
+
+    return () => {
+      isMounted = false;
+      clearTimeout(reconnectTimer);
+      if (wsRef.current) {
+        wsRef.current.close();
+        wsRef.current = null;
+      }
+    };
   }, []);
 
   // 노래 세션 감지 - 3초마다 폴링
@@ -128,7 +168,7 @@ export default function Home() {
       </div>
 
       {/* 랜덤 뽑기 */}
-      <RandomPicker onAdd={fetchQueue} />
+      <RandomPicker onAdd={fetchQueue} wsRef={wsRef} />
 
       {/* 폼 */}
       <EnqueueForm onAdd={fetchQueue} />

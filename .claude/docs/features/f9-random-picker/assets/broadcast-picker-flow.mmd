@@ -1,0 +1,14 @@
+sequenceDiagram
+    participant Admin as 관리자
+    participant WS_Server as WebSocket Server
+    participant Viewer as 일반 사용자 (N명)
+
+    Admin->>WS_Server: { type: "picker_start", winner: "홍길동", password: "xxx" }
+    WS_Server->>WS_Server: 관리자 비밀번호 검증
+    WS_Server->>Admin: { type: "picker_start", winner: "홍길동" }
+    WS_Server->>Viewer: { type: "picker_start", winner: "홍길동" }
+    Note over Admin, Viewer: 모든 클라이언트가 동시에<br/>룰렛 애니메이션 재생 (~2.5초)
+    Note over Admin, Viewer: 애니메이션 종료 후<br/>당첨자 이름 크게 표시
+    Admin->>WS_Server: POST /api/queue { name, reason, direction: "front" }
+    WS_Server-->>Admin: { item: QueueItem }
+    Note over Admin: 큐에 추가 완료 → 큐 새로고침

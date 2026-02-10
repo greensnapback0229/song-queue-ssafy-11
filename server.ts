@@ -62,19 +62,37 @@ app.prepare().then(() => {
     ws.on('message', (message) => {
       try {
         const data = JSON.parse(message.toString());
-        if (data.type === 'comment') {
-          // 메모리에 저장
-          sessionComments.push(data);
-          // 모든 클라이언트에게 브로드캐스트
-          const msg = JSON.stringify(data);
+        const broadcast = (msg: string) => {
           clients.forEach((client) => {
             if (client.readyState === WebSocket.OPEN) {
               client.send(msg);
             }
           });
+        };
+
+        if (data.type === 'comment') {
+          // 메모리에 저장
+          sessionComments.push(data);
+          // 모든 클라이언트에게 브로드캐스트
+          broadcast(JSON.stringify(data));
         } else if (data.type === 'clear_comments') {
           // 노래 완료 시 댓글 초기화
           sessionComments = [];
+        } else if (data.type === 'picker_start') {
+          // 랜덤 뽑기 시작 - 관리자 인증 후 broadcast
+          const adminPassword = process.env.ADMIN_PASSWORD;
+          if (!data.password || !adminPassword || data.password !== adminPassword) {
+            ws.send(JSON.stringify({ type: 'picker_error', message: '관리자 인증 실패' }));
+            return;
+          }
+          broadcast(JSON.stringify({ type: 'picker_start', winner: data.winner }));
+        } else if (data.type === 'picker_end') {
+          // 랜덤 뽑기 종료 - 관리자 인증 후 broadcast
+          const adminPassword = process.env.ADMIN_PASSWORD;
+          if (!data.password || !adminPassword || data.password !== adminPassword) {
+            return;
+          }
+          broadcast(JSON.stringify({ type: 'picker_end' }));
         }
       } catch (err) {
         console.error('Invalid WebSocket message:', err);
