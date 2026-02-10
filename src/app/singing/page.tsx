@@ -145,6 +145,7 @@ export default function SingingPage() {
   const formatTime = (timestamp: number) => {
     const date = new Date(timestamp);
     return date.toLocaleTimeString('ko-KR', {
+      timeZone: 'Asia/Seoul',
       hour: '2-digit',
       minute: '2-digit',
       second: '2-digit'
