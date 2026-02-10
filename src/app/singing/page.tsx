@@ -74,8 +74,8 @@ export default function SingingPage() {
         }
       };
 
-      ws.onclose = () => {
-        console.log('WebSocket disconnected');
+      ws.onclose = (event) => {
+        console.log(`WebSocket disconnected: code=${event.code}, reason=${event.reason}, wasClean=${event.wasClean}`);
         if (isMounted) {
           setWsConnected(false);
           // 3초 후 재연결 시도
