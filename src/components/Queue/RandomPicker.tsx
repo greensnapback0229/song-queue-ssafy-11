@@ -6,12 +6,12 @@ import { MEMBERS } from '@/constants/members';
 
 interface RandomPickerProps {
   onAdd: () => void;
-  wsRef: React.RefObject<WebSocket | null>;
+  ws: WebSocket | null;
 }
 
 type Phase = 'idle' | 'spinning' | 'result';
 
-export default function RandomPicker({ onAdd, wsRef }: RandomPickerProps) {
+export default function RandomPicker({ onAdd, ws }: RandomPickerProps) {
   const { isAdmin, password } = useAdmin();
   const [phase, setPhase] = useState<Phase>('idle');
   const [displayName, setDisplayName] = useState('');
@@ -99,9 +99,8 @@ export default function RandomPicker({ onAdd, wsRef }: RandomPickerProps) {
     tick();
   }, []);
 
-  // WebSocket 메시지 수신 핸들러
+  // WebSocket 메시지 수신 핸들러 - ws가 바뀔 때마다 재등록
   useEffect(() => {
-    const ws = wsRef.current;
     if (!ws) return;
 
     const handleMessage = (event: MessageEvent) => {
@@ -131,12 +130,11 @@ export default function RandomPicker({ onAdd, wsRef }: RandomPickerProps) {
     return () => {
       ws.removeEventListener('message', handleMessage);
     };
-  }, [wsRef, cleanup, runAnimation, onAdd]);
+  }, [ws, cleanup, runAnimation, onAdd]);
 
   // 관리자: 뽑기 시작 → WebSocket으로 broadcast
   const handleStartPicker = useCallback(() => {
     const chosen = getRandomMember();
-    const ws = wsRef.current;
 
     if (ws && ws.readyState === WebSocket.OPEN) {
       ws.send(JSON.stringify({
@@ -148,7 +146,7 @@ export default function RandomPicker({ onAdd, wsRef }: RandomPickerProps) {
       // WebSocket 미연결 시 로컬에서만 동작 (graceful degradation)
       runAnimation(chosen);
     }
-  }, [password, wsRef, runAnimation]);
+  }, [password, ws, runAnimation]);
 
   // 관리자: 큐에 추가
   const handleAddToQueue = async () => {
@@ -182,7 +180,6 @@ export default function RandomPicker({ onAdd, wsRef }: RandomPickerProps) {
       }
 
       // 성공 → picker_end broadcast + 큐 새로고침
-      const ws = wsRef.current;
       if (ws && ws.readyState === WebSocket.OPEN) {
         ws.send(JSON.stringify({ type: 'picker_end', password }));
       } else {
@@ -209,7 +206,6 @@ export default function RandomPicker({ onAdd, wsRef }: RandomPickerProps) {
 
   // 관리자: 닫기
   const handleClose = () => {
-    const ws = wsRef.current;
     if (ws && ws.readyState === WebSocket.OPEN) {
       ws.send(JSON.stringify({ type: 'picker_end', password }));
     } else {

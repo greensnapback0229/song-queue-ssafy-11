@@ -15,7 +15,7 @@ export default function Home() {
   const [isLoading, setIsLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const router = useRouter();
-  const wsRef = useRef<WebSocket | null>(null);
+  const [ws, setWs] = useState<WebSocket | null>(null);
 
   const fetchQueue = async () => {
     try {
@@ -65,26 +65,29 @@ export default function Home() {
   useEffect(() => {
     let isMounted = true;
     let reconnectTimer: ReturnType<typeof setTimeout>;
+    let currentWs: WebSocket | null = null;
 
     const connect = () => {
       const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-      const ws = new WebSocket(`${protocol}//${window.location.host}/ws`);
+      const socket = new WebSocket(`${protocol}//${window.location.host}/ws`);
 
-      ws.onopen = () => {
+      socket.onopen = () => {
         if (isMounted) {
-          wsRef.current = ws;
+          currentWs = socket;
+          setWs(socket);
         }
       };
 
-      ws.onclose = () => {
+      socket.onclose = () => {
         if (isMounted) {
-          wsRef.current = null;
+          currentWs = null;
+          setWs(null);
           reconnectTimer = setTimeout(connect, 3000);
         }
       };
 
-      ws.onerror = () => {
-        ws.close();
+      socket.onerror = () => {
+        socket.close();
       };
     };
 
@@ -93,10 +96,10 @@ export default function Home() {
     return () => {
       isMounted = false;
       clearTimeout(reconnectTimer);
-      if (wsRef.current) {
-        wsRef.current.close();
-        wsRef.current = null;
+      if (currentWs) {
+        currentWs.close();
       }
+      setWs(null);
     };
   }, []);
 
@@ -168,7 +171,7 @@ export default function Home() {
       </div>
 
       {/* 랜덤 뽑기 */}
-      <RandomPicker onAdd={fetchQueue} wsRef={wsRef} />
+      <RandomPicker onAdd={fetchQueue} ws={ws} />
 
       {/* 폼 */}
       <EnqueueForm onAdd={fetchQueue} />
