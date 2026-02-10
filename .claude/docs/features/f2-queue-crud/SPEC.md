@@ -34,6 +34,7 @@ Deque 구조로 앞/뒤 양방향 삽입이 가능하고, 큐 형태로 시각�
 
 ### POST /api/queue
 - 큐에 항목 추가
+- **인증**: 관리자 비밀번호 필요 (`x-admin-password` 헤더)
 - Body: `{ name: string, reason: string, direction: "front" | "back" }`
 - direction="back": 현재 max(position)+1로 삽입
 - direction="front": 모든 기존 항목 position+1, 새 항목 position=0
@@ -42,6 +43,7 @@ Deque 구조로 앞/뒤 양방향 삽입이 가능하고, 큐 형태로 시각�
 
 ### DELETE /api/queue/[id]
 - 큐에서 항목 삭제
+- **인증**: 관리자 비밀번호 필요 (`x-admin-password` 헤더)
 - 삭제 후 position 재정렬
 - Response: `{ success: true }`
 
