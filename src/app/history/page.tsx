@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { useAdmin } from '@/context/AdminContext';
 
 interface SongHistory {
   id: number;
@@ -12,6 +13,7 @@ interface SongHistory {
 }
 
 export default function History() {
+  const { isAdmin, password } = useAdmin();
   const [items, setItems] = useState<SongHistory[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const router = useRouter();
@@ -34,21 +36,44 @@ export default function History() {
     return () => clearInterval(interval);
   }, [router]);
 
-  useEffect(() => {
-    const fetchHistory = async () => {
-      try {
-        const response = await fetch('/api/history');
-        const data = await response.json();
-        setItems(data.items || []);
-      } catch (error) {
-        console.error('Failed to fetch history:', error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
+  const fetchHistory = async () => {
+    try {
+      const response = await fetch('/api/history');
+      const data = await response.json();
+      setItems(data.items || []);
+    } catch (error) {
+      console.error('Failed to fetch history:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
+  useEffect(() => {
     fetchHistory();
   }, []);
+
+  const handleDelete = async (id: number) => {
+    if (!isAdmin) return;
+    if (!confirm('정말 이 내역을 삭제하시겠습니까?')) return;
+
+    try {
+      const response = await fetch(`/api/history/${id}`, {
+        method: 'DELETE',
+        headers: {
+          'x-admin-password': password,
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error('삭제에 실패했습니다.');
+      }
+
+      await fetchHistory();
+    } catch (error) {
+      console.error('삭제 실패:', error);
+      alert('삭제에 실패했습니다.');
+    }
+  };
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString + 'Z');
@@ -92,7 +117,17 @@ export default function History() {
               >
                 <div className="flex justify-between items-start mb-2">
                   <h3 className="text-xl font-bold text-gray-900">{item.name}</h3>
-                  <span className="text-sm text-gray-500">{formatDate(item.completed_at)}</span>
+                  <div className="flex items-center gap-3">
+                    <span className="text-sm text-gray-500">{formatDate(item.completed_at)}</span>
+                    {isAdmin && (
+                      <button
+                        onClick={() => handleDelete(item.id)}
+                        className="text-sm text-red-500 hover:text-red-700 transition-colors"
+                      >
+                        삭제
+                      </button>
+                    )}
+                  </div>
                 </div>
                 <p className="text-lg text-purple-600 mb-2">{item.song_title}</p>
                 <p className="text-gray-600">{item.reason}</p>
