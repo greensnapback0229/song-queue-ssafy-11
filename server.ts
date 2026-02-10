@@ -32,6 +32,19 @@ app.prepare().then(() => {
     });
   });
 
+  // 30초마다 ping으로 연결 유지 (nginx 타임아웃 방지)
+  const pingInterval = setInterval(() => {
+    clients.forEach((client) => {
+      if (client.readyState === WebSocket.OPEN) {
+        client.ping();
+      }
+    });
+  }, 30000);
+
+  wss.on('close', () => {
+    clearInterval(pingInterval);
+  });
+
   wss.on('connection', (ws) => {
     console.log('WebSocket client connected');
     clients.add(ws);

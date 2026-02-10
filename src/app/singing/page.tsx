@@ -37,46 +37,62 @@ export default function SingingPage() {
     fetchSession();
   }, [router]);
 
-  // WebSocket connection
+  // WebSocket connection with auto-reconnect
   useEffect(() => {
     if (!session) return;
 
-    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-    const ws = new WebSocket(`${protocol}//${window.location.host}`);
-    wsRef.current = ws;
+    let ws: WebSocket | null = null;
+    let reconnectTimer: NodeJS.Timeout | null = null;
+    let isMounted = true;
 
-    ws.onopen = () => {
-      console.log('WebSocket connected');
-      setWsConnected(true);
-    };
+    const connect = () => {
+      if (!isMounted) return;
 
-    ws.onmessage = (event) => {
-      try {
-        const data = JSON.parse(event.data);
-        if (data.type === 'comment') {
-          setComments((prev) => [...prev, {
-            nickname: data.nickname,
-            content: data.content,
-            timestamp: data.timestamp
-          }]);
+      const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+      ws = new WebSocket(`${protocol}//${window.location.host}`);
+      wsRef.current = ws;
+
+      ws.onopen = () => {
+        console.log('WebSocket connected');
+        if (isMounted) setWsConnected(true);
+      };
+
+      ws.onmessage = (event) => {
+        try {
+          const data = JSON.parse(event.data);
+          if (data.type === 'comment') {
+            setComments((prev) => [...prev, {
+              nickname: data.nickname,
+              content: data.content,
+              timestamp: data.timestamp
+            }]);
+          }
+        } catch (error) {
+          console.error('Failed to parse WebSocket message:', error);
         }
-      } catch (error) {
-        console.error('Failed to parse WebSocket message:', error);
-      }
+      };
+
+      ws.onclose = () => {
+        console.log('WebSocket disconnected');
+        if (isMounted) {
+          setWsConnected(false);
+          // 3초 후 재연결 시도
+          reconnectTimer = setTimeout(connect, 3000);
+        }
+      };
+
+      ws.onerror = (error) => {
+        console.error('WebSocket error:', error);
+        if (isMounted) setWsConnected(false);
+      };
     };
 
-    ws.onclose = () => {
-      console.log('WebSocket disconnected');
-      setWsConnected(false);
-    };
-
-    ws.onerror = (error) => {
-      console.error('WebSocket error:', error);
-      setWsConnected(false);
-    };
+    connect();
 
     return () => {
-      ws.close();
+      isMounted = false;
+      if (reconnectTimer) clearTimeout(reconnectTimer);
+      if (ws) ws.close();
     };
   }, [session]);
 
