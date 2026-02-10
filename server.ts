@@ -16,8 +16,21 @@ app.prepare().then(() => {
     handle(req, res, parsedUrl);
   });
 
-  const wss = new WebSocketServer({ server });
+  // noServer 모드로 생성 - upgrade 이벤트를 직접 핸들링
+  const wss = new WebSocketServer({ noServer: true });
   const clients = new Set<WebSocket>();
+
+  // HTTP 서버의 upgrade 이벤트를 명시적으로 처리
+  server.on('upgrade', (request, socket, head) => {
+    // Next.js HMR WebSocket은 무시 (개발 모드)
+    if (request.url?.startsWith('/_next/')) {
+      return;
+    }
+
+    wss.handleUpgrade(request, socket, head, (ws) => {
+      wss.emit('connection', ws, request);
+    });
+  });
 
   wss.on('connection', (ws) => {
     console.log('WebSocket client connected');
