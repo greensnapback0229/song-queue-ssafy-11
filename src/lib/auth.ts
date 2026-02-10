@@ -1,6 +1,6 @@
-const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'ssafy11';
+const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD;
 
 export function verifyPassword(password: string | null): boolean {
-  if (!password) return false;
+  if (!password || !ADMIN_PASSWORD) return false;
   return password === ADMIN_PASSWORD;
 }
