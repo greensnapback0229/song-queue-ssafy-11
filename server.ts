@@ -20,16 +20,18 @@ app.prepare().then(() => {
   const wss = new WebSocketServer({ noServer: true });
   const clients = new Set<WebSocket>();
 
-  // HTTP 서버의 upgrade 이벤트를 명시적으로 처리
+  // /ws 경로만 WebSocket으로 처리 (Next.js 내부 WS와 충돌 방지)
   server.on('upgrade', (request, socket, head) => {
-    // Next.js HMR WebSocket은 무시 (개발 모드)
-    if (request.url?.startsWith('/_next/')) {
-      return;
-    }
+    const { pathname } = new URL(request.url || '/', `http://${hostname}:${port}`);
 
-    wss.handleUpgrade(request, socket, head, (ws) => {
-      wss.emit('connection', ws, request);
-    });
+    if (pathname === '/ws') {
+      wss.handleUpgrade(request, socket, head, (ws) => {
+        wss.emit('connection', ws, request);
+      });
+    } else {
+      // Next.js 내부 WebSocket 등 다른 요청은 무시
+      socket.destroy();
+    }
   });
 
   // 30초마다 ping으로 연결 유지 (nginx 타임아웃 방지)
