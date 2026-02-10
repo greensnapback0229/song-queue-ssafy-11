@@ -1,0 +1,20 @@
+sequenceDiagram
+    participant Admin as 관리자
+    participant UI as RandomPickerButton
+    participant Anim as 룰렛 애니메이션
+    participant Modal as 당첨 모달
+    participant API as POST /api/queue
+    participant DB as SQLite
+
+    Admin->>UI: "랜덤 뽑기" 버튼 클릭
+    UI->>Anim: 명단 셔플 애니메이션 시작 (2~3초)
+    Note over Anim: 이름이 빠르게 돌아가며<br/>점점 느려지는 효과
+    Anim->>Anim: Math.random()으로 1명 선정
+    Anim->>Modal: 당첨자 이름 크게 표시
+    Note over Modal: 축하 효과 + 이름 강조
+    Admin->>Modal: "큐에 추가" 버튼 클릭
+    Modal->>API: POST { name, reason: "랜덤 뽑기 당첨", direction: "front" }
+    API->>DB: INSERT queue_items (position=0)
+    DB-->>API: 성공
+    API-->>Modal: { item: QueueItem }
+    Modal->>UI: 모달 닫기 + 큐 목록 새로고침

@@ -6,6 +6,7 @@ import { QueueItem } from '@/types';
 import EnqueueForm from '@/components/Queue/EnqueueForm';
 import QueueList from '@/components/Queue/QueueList';
 import DequeueModal from '@/components/Queue/DequeueModal';
+import RandomPicker from '@/components/Queue/RandomPicker';
 import { useAdmin } from '@/context/AdminContext';
 
 export default function Home() {
@@ -125,6 +126,9 @@ export default function Home() {
           </div>
         </div>
       </div>
+
+      {/* 랜덤 뽑기 */}
+      <RandomPicker onAdd={fetchQueue} />
 
       {/* 폼 */}
       <EnqueueForm onAdd={fetchQueue} />
