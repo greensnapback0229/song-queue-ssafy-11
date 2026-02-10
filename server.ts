@@ -20,6 +20,9 @@ app.prepare().then(() => {
   const wss = new WebSocketServer({ noServer: true });
   const clients = new Set<WebSocket>();
 
+  // 현재 세션의 댓글을 메모리에 보관 (노래 완료 시 초기화)
+  let sessionComments: Array<{ type: string; nickname: string; content: string; timestamp: number }> = [];
+
   // /ws 경로만 WebSocket으로 처리 (Next.js 내부 WS와 충돌 방지)
   server.on('upgrade', (request, socket, head) => {
     const { pathname } = new URL(request.url || '/', `http://${hostname}:${port}`);
@@ -51,16 +54,27 @@ app.prepare().then(() => {
     console.log('WebSocket client connected');
     clients.add(ws);
 
+    // 새 클라이언트에게 기존 댓글 히스토리 전송
+    if (sessionComments.length > 0) {
+      ws.send(JSON.stringify({ type: 'history', comments: sessionComments }));
+    }
+
     ws.on('message', (message) => {
       try {
         const data = JSON.parse(message.toString());
         if (data.type === 'comment') {
+          // 메모리에 저장
+          sessionComments.push(data);
+          // 모든 클라이언트에게 브로드캐스트
           const msg = JSON.stringify(data);
           clients.forEach((client) => {
             if (client.readyState === WebSocket.OPEN) {
               client.send(msg);
             }
           });
+        } else if (data.type === 'clear_comments') {
+          // 노래 완료 시 댓글 초기화
+          sessionComments = [];
         }
       } catch (err) {
         console.error('Invalid WebSocket message:', err);

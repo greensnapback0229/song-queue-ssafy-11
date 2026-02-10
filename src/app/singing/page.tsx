@@ -68,6 +68,13 @@ export default function SingingPage() {
               content: data.content,
               timestamp: data.timestamp
             }]);
+          } else if (data.type === 'history') {
+            // 서버에서 기존 댓글 히스토리 수신
+            setComments(data.comments.map((c: { nickname: string; content: string; timestamp: number }) => ({
+              nickname: c.nickname,
+              content: c.content,
+              timestamp: c.timestamp
+            })));
           }
         } catch (error) {
           console.error('Failed to parse WebSocket message:', error);
@@ -136,6 +143,10 @@ export default function SingingPage() {
       });
 
       if (res.ok) {
+        // 서버 메모리의 댓글 초기화
+        if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
+          wsRef.current.send(JSON.stringify({ type: 'clear_comments' }));
+        }
         router.push('/');
       } else {
         throw new Error('Failed to complete session');
