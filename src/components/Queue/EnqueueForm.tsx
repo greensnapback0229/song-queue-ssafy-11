@@ -67,7 +67,7 @@ export default function EnqueueForm({ onAdd }: EnqueueFormProps) {
             id="name"
             value={name}
             onChange={(e) => setName(e.target.value)}
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none transition-all"
+            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none transition-all text-gray-900"
             placeholder="이름을 입력하세요"
             disabled={isLoading}
           />
@@ -82,7 +82,7 @@ export default function EnqueueForm({ onAdd }: EnqueueFormProps) {
             id="reason"
             value={reason}
             onChange={(e) => setReason(e.target.value)}
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none transition-all"
+            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none transition-all text-gray-900"
             placeholder="벌칙 사유를 입력하세요"
             disabled={isLoading}
           />

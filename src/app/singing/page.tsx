@@ -229,7 +229,7 @@ export default function SingingPage() {
             placeholder="닉네임"
             value={nickname}
             onChange={(e) => setNickname(e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 rounded mb-2 focus:outline-none focus:ring-2 focus:ring-purple-500"
+            className="w-full px-3 py-2 border border-gray-300 rounded mb-2 focus:outline-none focus:ring-2 focus:ring-purple-500 text-gray-900"
             maxLength={20}
           />
           <div className="flex gap-2">
@@ -238,7 +238,7 @@ export default function SingingPage() {
               placeholder="댓글 내용"
               value={content}
               onChange={(e) => setContent(e.target.value)}
-              className="flex-1 px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-purple-500"
+              className="flex-1 px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-purple-500 text-gray-900"
               maxLength={100}
             />
             <button

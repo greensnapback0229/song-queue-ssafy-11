@@ -84,7 +84,7 @@ export default function DequeueModal({
             value={songTitle}
             onChange={(e) => setSongTitle(e.target.value)}
             placeholder="노래 제목을 입력하세요"
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 text-gray-900"
             disabled={isLoading}
           />
         </div>
