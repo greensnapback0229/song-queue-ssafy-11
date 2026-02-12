@@ -176,9 +176,33 @@ export default function DequeueModal({
           </div>
         )}
 
+        {/* 미리보기 플레이어 */}
         {selectedVideo && (
-          <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded-lg text-sm text-green-800">
-            선택된 영상: <span className="font-medium" dangerouslySetInnerHTML={{ __html: selectedVideo.title }} />
+          <div className="mb-4">
+            <div className="flex items-center justify-between mb-2">
+              <div className="text-sm font-medium text-gray-700">미리보기</div>
+              <button
+                type="button"
+                onClick={() => setSelectedVideo(null)}
+                className="text-xs text-red-500 hover:text-red-700"
+              >
+                선택 해제
+              </button>
+            </div>
+            <div className="relative w-full rounded-lg overflow-hidden bg-black" style={{ aspectRatio: '16/9' }}>
+              <iframe
+                src={`https://www.youtube.com/embed/${selectedVideo.videoId}?autoplay=0&controls=1`}
+                allow="encrypted-media"
+                allowFullScreen
+                className="absolute inset-0 w-full h-full border-0"
+              />
+            </div>
+            <div className="mt-2 p-2 bg-green-50 border border-green-200 rounded-lg text-sm text-green-800">
+              선택됨: <span className="font-medium" dangerouslySetInnerHTML={{ __html: selectedVideo.title }} />
+            </div>
+            <div className="mt-1 text-xs text-gray-500">
+              재생이 안 되면 다른 영상을 선택하세요.
+            </div>
           </div>
         )}
 
