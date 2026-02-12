@@ -144,65 +144,58 @@ export default function DequeueModal({
         {/* YouTube 검색 결과 */}
         {ytResults.length > 0 && (
           <div className="mb-6 space-y-2">
-            <div className="text-sm font-medium text-gray-700 mb-2">반주 영상 선택 (선택사항)</div>
-            {ytResults.map((video) => (
-              <button
-                key={video.videoId}
-                type="button"
-                onClick={() => setSelectedVideo(
-                  selectedVideo?.videoId === video.videoId ? null : video
-                )}
-                className={`w-full flex items-center gap-3 p-2 rounded-lg border-2 text-left transition-colors ${
-                  selectedVideo?.videoId === video.videoId
-                    ? 'border-purple-500 bg-purple-50'
-                    : 'border-gray-200 hover:border-gray-300'
-                }`}
-                disabled={isLoading}
-              >
-                <img
-                  src={video.thumbnailUrl}
-                  alt={video.title}
-                  className="w-32 h-20 object-cover rounded flex-shrink-0"
-                />
-                <div className="min-w-0 flex-1">
-                  <div className="text-sm font-medium text-gray-900 line-clamp-2" dangerouslySetInnerHTML={{ __html: video.title }} />
-                  <div className="text-xs text-gray-500 mt-1">{video.channelTitle}</div>
+            <div className="text-sm font-medium text-gray-700 mb-1">반주 영상 선택 (선택사항)</div>
+            <div className="p-2 bg-amber-50 border border-amber-200 rounded-lg text-xs text-amber-700">
+              노래방 공식 영상은 YouTube에서 임베딩을 허용하지 않습니다. 미리보기로 재생 가능 여부를 확인해주세요.
+            </div>
+            {ytResults.map((video) => {
+              const isSelected = selectedVideo?.videoId === video.videoId;
+              return (
+                <div key={video.videoId}>
+                  <button
+                    type="button"
+                    onClick={() => setSelectedVideo(isSelected ? null : video)}
+                    className={`w-full flex items-center gap-3 p-2 rounded-lg border-2 text-left transition-colors ${
+                      isSelected
+                        ? 'border-purple-500 bg-purple-50'
+                        : 'border-gray-200 hover:border-gray-300'
+                    }`}
+                    disabled={isLoading}
+                  >
+                    <img
+                      src={video.thumbnailUrl}
+                      alt={video.title}
+                      className="w-32 h-20 object-cover rounded flex-shrink-0"
+                    />
+                    <div className="min-w-0 flex-1">
+                      <div className="text-sm font-medium text-gray-900 line-clamp-2" dangerouslySetInnerHTML={{ __html: video.title }} />
+                      <div className="text-xs text-gray-500 mt-1">{video.channelTitle}</div>
+                    </div>
+                    {isSelected ? (
+                      <div className="text-purple-600 font-bold text-lg flex-shrink-0">&#10003;</div>
+                    ) : (
+                      <div className="text-xs text-gray-400 flex-shrink-0">미리보기</div>
+                    )}
+                  </button>
+                  {/* 토글 미리보기 */}
+                  {isSelected && (
+                    <div className="mt-1 mb-2">
+                      <div className="relative w-full rounded-lg overflow-hidden bg-black" style={{ aspectRatio: '16/9' }}>
+                        <iframe
+                          src={`https://www.youtube.com/embed/${video.videoId}?autoplay=0&controls=1`}
+                          allow="encrypted-media"
+                          allowFullScreen
+                          className="absolute inset-0 w-full h-full border-0"
+                        />
+                      </div>
+                      <div className="mt-1 text-xs text-gray-500">
+                        재생이 안 되면 다른 영상을 선택하세요.
+                      </div>
+                    </div>
+                  )}
                 </div>
-                {selectedVideo?.videoId === video.videoId && (
-                  <div className="text-purple-600 font-bold text-lg flex-shrink-0">&#10003;</div>
-                )}
-              </button>
-            ))}
-          </div>
-        )}
-
-        {/* 미리보기 플레이어 */}
-        {selectedVideo && (
-          <div className="mb-4">
-            <div className="flex items-center justify-between mb-2">
-              <div className="text-sm font-medium text-gray-700">미리보기</div>
-              <button
-                type="button"
-                onClick={() => setSelectedVideo(null)}
-                className="text-xs text-red-500 hover:text-red-700"
-              >
-                선택 해제
-              </button>
-            </div>
-            <div className="relative w-full rounded-lg overflow-hidden bg-black" style={{ aspectRatio: '16/9' }}>
-              <iframe
-                src={`https://www.youtube.com/embed/${selectedVideo.videoId}?autoplay=0&controls=1`}
-                allow="encrypted-media"
-                allowFullScreen
-                className="absolute inset-0 w-full h-full border-0"
-              />
-            </div>
-            <div className="mt-2 p-2 bg-green-50 border border-green-200 rounded-lg text-sm text-green-800">
-              선택됨: <span className="font-medium" dangerouslySetInnerHTML={{ __html: selectedVideo.title }} />
-            </div>
-            <div className="mt-1 text-xs text-gray-500">
-              재생이 안 되면 다른 영상을 선택하세요.
-            </div>
+              );
+            })}
           </div>
         )}
 
