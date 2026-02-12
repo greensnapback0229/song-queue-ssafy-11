@@ -10,6 +10,9 @@
 !.yarn/releases
 !.yarn/versions
 
+
+.omc/**
+.claude/skills/*
 # testing
 /coverage
 
