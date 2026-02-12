@@ -209,7 +209,7 @@ export default function SingingPage() {
             </div>
           </div>
 
-          <div className="mt-8 p-6 bg-white/10 backdrop-blur-sm rounded-lg">
+          <div className="mt-8 p-6 rounded-lg">
             <div className="text-lg mb-2 text-purple-200">벌칙 사유</div>
             <div className="text-2xl text-pink-200">
               {session.reason}
