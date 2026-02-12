@@ -145,8 +145,9 @@ export default function DequeueModal({
         {ytResults.length > 0 && (
           <div className="mb-6 space-y-2">
             <div className="text-sm font-medium text-gray-700 mb-1">반주 영상 선택 (선택사항)</div>
-            <div className="p-2 bg-amber-50 border border-amber-200 rounded-lg text-xs text-amber-700">
-              노래방 공식 영상은 YouTube에서 임베딩을 허용하지 않습니다. 미리보기로 재생 가능 여부를 확인해주세요.
+            <div className="p-3 bg-amber-50 border border-amber-300 rounded-lg text-sm text-amber-800 leading-relaxed">
+              <p className="font-bold">노래방 공식 영상은 YouTube에서 임베딩을 허용하지 않습니다.</p>
+              <p className="mt-1">금영노래방은 임베딩을 허용합니다. 미리보기로 재생 가능 여부를 확인해주세요.</p>
             </div>
             {ytResults.map((video) => {
               const isSelected = selectedVideo?.videoId === video.videoId;

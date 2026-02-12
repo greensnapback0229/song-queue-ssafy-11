@@ -18,7 +18,7 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    const searchQuery = `${q.trim()} MR 가사`;
+    const searchQuery = `${q.trim()} 금영노래방`;
     const params = new URLSearchParams({
       part: 'snippet',
       q: searchQuery,
