@@ -230,7 +230,7 @@ export default function SingingPage() {
       </div>
 
       {/* Comments sidebar */}
-      <div className="w-96 bg-white shadow-2xl flex flex-col">
+      <div className={`w-96 shadow-2xl flex flex-col ${hasVideo ? 'bg-black/60 backdrop-blur-md' : 'bg-white'}`}>
         {/* Header */}
         <div className="p-4 bg-purple-700 text-white">
           <h2 className="text-xl font-bold">실시간 댓글</h2>
@@ -244,26 +244,26 @@ export default function SingingPage() {
         </div>
 
         {/* Comments list */}
-        <div className="flex-1 overflow-y-auto p-4 space-y-3 bg-gray-50">
+        <div className={`flex-1 overflow-y-auto p-4 space-y-3 ${hasVideo ? 'bg-transparent' : 'bg-gray-50'}`}>
           {comments.length === 0 ? (
-            <div className="text-center text-gray-400 mt-8">
+            <div className={`text-center mt-8 ${hasVideo ? 'text-gray-300' : 'text-gray-400'}`}>
               첫 댓글을 남겨보세요!
             </div>
           ) : (
             comments.map((comment, index) => (
               <div
                 key={index}
-                className="bg-white p-3 rounded-lg shadow-sm border border-gray-200"
+                className={`p-3 rounded-lg shadow-sm ${hasVideo ? 'bg-white/15 border border-white/20' : 'bg-white border border-gray-200'}`}
               >
                 <div className="flex items-baseline justify-between mb-1">
-                  <span className="font-bold text-purple-700">
+                  <span className={`font-bold ${hasVideo ? 'text-purple-300' : 'text-purple-700'}`}>
                     {comment.nickname}
                   </span>
-                  <span className="text-xs text-gray-400">
+                  <span className={`text-xs ${hasVideo ? 'text-gray-400' : 'text-gray-400'}`}>
                     {formatTime(comment.timestamp)}
                   </span>
                 </div>
-                <div className="text-gray-800">
+                <div className={hasVideo ? 'text-white' : 'text-gray-800'}>
                   {comment.content}
                 </div>
               </div>
@@ -273,13 +273,13 @@ export default function SingingPage() {
         </div>
 
         {/* Comment input form */}
-        <form onSubmit={handleSendComment} className="p-4 bg-white border-t border-gray-200">
+        <form onSubmit={handleSendComment} className={`p-4 ${hasVideo ? 'bg-black/30 border-t border-white/20' : 'bg-white border-t border-gray-200'}`}>
           <input
             type="text"
             placeholder="닉네임"
             value={nickname}
             onChange={(e) => setNickname(e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 rounded mb-2 focus:outline-none focus:ring-2 focus:ring-purple-500 text-gray-900"
+            className={`w-full px-3 py-2 border rounded mb-2 focus:outline-none focus:ring-2 focus:ring-purple-500 ${hasVideo ? 'bg-white/10 border-white/20 text-white placeholder-gray-400' : 'border-gray-300 text-gray-900'}`}
             maxLength={20}
           />
           <div className="flex gap-2">
@@ -288,7 +288,7 @@ export default function SingingPage() {
               placeholder="댓글 내용"
               value={content}
               onChange={(e) => setContent(e.target.value)}
-              className="flex-1 px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-purple-500 text-gray-900"
+              className={`flex-1 px-3 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-purple-500 ${hasVideo ? 'bg-white/10 border-white/20 text-white placeholder-gray-400' : 'border-gray-300 text-gray-900'}`}
               maxLength={100}
             />
             <button
