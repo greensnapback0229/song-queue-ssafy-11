@@ -24,6 +24,7 @@ export async function GET(request: NextRequest) {
       q: searchQuery,
       type: 'video',
       videoEmbeddable: 'true',
+      videoSyndicated: 'true',
       maxResults: '5',
       key: apiKey,
     });
