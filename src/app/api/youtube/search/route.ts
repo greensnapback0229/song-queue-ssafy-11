@@ -18,31 +18,48 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    const searchQuery = `${q.trim()} 금영노래방`;
-    const params = new URLSearchParams({
-      part: 'snippet',
-      q: searchQuery,
-      type: 'video',
-      videoEmbeddable: 'true',
-      videoSyndicated: 'true',
-      maxResults: '5',
-      key: apiKey,
-    });
+    const keyword = request.nextUrl.searchParams.get('keyword') || '금영노래방';
+    const searchQuery = `${q.trim()} ${keyword}`;
+    const needsFilter = keyword !== '금영노래방';
 
-    const res = await fetch(`https://www.googleapis.com/youtube/v3/search?${params}`);
-    if (!res.ok) {
-      const error = await res.json();
-      console.error('YouTube API error:', error);
+    const fetchResults = async (maxResults: number) => {
+      const params = new URLSearchParams({
+        part: 'snippet',
+        q: searchQuery,
+        type: 'video',
+        videoEmbeddable: 'true',
+        videoSyndicated: 'true',
+        maxResults: String(maxResults),
+        key: apiKey,
+      });
+
+      const res = await fetch(`https://www.googleapis.com/youtube/v3/search?${params}`);
+      if (!res.ok) {
+        const error = await res.json();
+        console.error('YouTube API error:', error);
+        return null;
+      }
+
+      const data = await res.json();
+      return (data.items || []).map((item: any) => ({
+        videoId: item.id.videoId,
+        title: item.snippet.title,
+        channelTitle: item.snippet.channelTitle,
+        thumbnailUrl: item.snippet.thumbnails.medium?.url || item.snippet.thumbnails.default?.url,
+      }));
+    };
+
+    let results = await fetchResults(needsFilter ? 10 : 5);
+    if (!results) {
       return NextResponse.json({ error: 'YouTube 검색에 실패했습니다' }, { status: 502 });
     }
 
-    const data = await res.json();
-    const results = (data.items || []).map((item: any) => ({
-      videoId: item.id.videoId,
-      title: item.snippet.title,
-      channelTitle: item.snippet.channelTitle,
-      thumbnailUrl: item.snippet.thumbnails.medium?.url || item.snippet.thumbnails.default?.url,
-    }));
+    // TJ노래방 필터링 (가사 MR 검색 시)
+    if (needsFilter) {
+      results = results.filter((r: any) => !/tj\s*노래방/i.test(r.title));
+    }
+
+    results = results.slice(0, 5);
 
     return NextResponse.json({ results });
   } catch (error) {

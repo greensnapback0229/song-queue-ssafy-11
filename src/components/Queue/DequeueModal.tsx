@@ -23,16 +23,17 @@ export default function DequeueModal({
   const [ytResults, setYtResults] = useState<YouTubeSearchResult[]>([]);
   const [ytSearching, setYtSearching] = useState(false);
   const [selectedVideo, setSelectedVideo] = useState<YouTubeSearchResult | null>(null);
+  const [searchMode, setSearchMode] = useState<'금영노래방' | '가사 MR'>('금영노래방');
 
   if (!isOpen || !nextPerson) return null;
 
-  const handleYouTubeSearch = async () => {
+  const searchYouTube = async (keyword: string) => {
     if (!songTitle.trim()) return;
     setYtSearching(true);
     setYtResults([]);
     setSelectedVideo(null);
     try {
-      const res = await fetch(`/api/youtube/search?q=${encodeURIComponent(songTitle.trim())}`, {
+      const res = await fetch(`/api/youtube/search?q=${encodeURIComponent(songTitle.trim())}&keyword=${encodeURIComponent(keyword)}`, {
         headers: { 'x-admin-password': password },
       });
       if (!res.ok) {
@@ -47,6 +48,17 @@ export default function DequeueModal({
     } finally {
       setYtSearching(false);
     }
+  };
+
+  const handleYouTubeSearch = () => {
+    setSearchMode('금영노래방');
+    searchYouTube('금영노래방');
+  };
+
+  const handleToggleSearch = () => {
+    const nextMode = searchMode === '금영노래방' ? '가사 MR' : '금영노래방';
+    setSearchMode(nextMode);
+    searchYouTube(nextMode);
   };
 
   const handleStart = async () => {
@@ -77,6 +89,7 @@ export default function DequeueModal({
       setSongTitle('');
       setYtResults([]);
       setSelectedVideo(null);
+      setSearchMode('금영노래방');
       onStart();
     } catch (error: any) {
       console.error('노래 시작 실패:', error);
@@ -90,6 +103,7 @@ export default function DequeueModal({
     setSongTitle('');
     setYtResults([]);
     setSelectedVideo(null);
+    setSearchMode('금영노래방');
     onClose();
   };
 
@@ -197,6 +211,14 @@ export default function DequeueModal({
                 </div>
               );
             })}
+            <button
+              type="button"
+              onClick={handleToggleSearch}
+              disabled={ytSearching}
+              className="w-full text-center py-2 text-sm text-blue-600 hover:text-blue-800 underline disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {ytSearching ? '검색 중...' : searchMode === '금영노래방' ? '다른 검색결과 보기 (가사 MR)' : '금영노래방 검색결과 보기'}
+            </button>
           </div>
         )}
 
