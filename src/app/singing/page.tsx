@@ -69,6 +69,9 @@ export default function SingingPage() {
               content: data.content,
               timestamp: data.timestamp
             }]);
+          } else if (data.type === 'session_ended') {
+            router.push('/');
+            return;
           } else if (data.type === 'history') {
             // 서버에서 기존 댓글 히스토리 수신
             setComments(data.comments.map((c: { nickname: string; content: string; timestamp: number }) => ({
@@ -144,11 +147,14 @@ export default function SingingPage() {
       });
 
       if (res.ok) {
-        // 서버 메모리의 댓글 초기화
         if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
+          // 서버 메모리의 댓글 초기화
           wsRef.current.send(JSON.stringify({ type: 'clear_comments' }));
+          // 모든 클라이언트에게 세션 종료 알림
+          wsRef.current.send(JSON.stringify({ type: 'session_ended' }));
+        } else {
+          router.push('/');
         }
-        router.push('/');
       } else {
         throw new Error('Failed to complete session');
       }

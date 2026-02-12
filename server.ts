@@ -78,6 +78,9 @@ app.prepare().then(() => {
         } else if (data.type === 'clear_comments') {
           // 노래 완료 시 댓글 초기화
           sessionComments = [];
+        } else if (data.type === 'session_ended') {
+          // 노래 종료 시 모든 클라이언트에게 broadcast
+          broadcast(JSON.stringify({ type: 'session_ended' }));
         } else if (data.type === 'picker_start') {
           // 랜덤 뽑기 시작 - 관리자 인증 후 broadcast
           const adminPassword = process.env.ADMIN_PASSWORD;
