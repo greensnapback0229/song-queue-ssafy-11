@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { QueueItem } from '@/types';
+import { QueueItem, YouTubeSearchResult } from '@/types';
 import { useAdmin } from '@/context/AdminContext';
 
 interface DequeueModalProps {
@@ -20,8 +20,34 @@ export default function DequeueModal({
   const { password } = useAdmin();
   const [songTitle, setSongTitle] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [ytResults, setYtResults] = useState<YouTubeSearchResult[]>([]);
+  const [ytSearching, setYtSearching] = useState(false);
+  const [selectedVideo, setSelectedVideo] = useState<YouTubeSearchResult | null>(null);
 
   if (!isOpen || !nextPerson) return null;
+
+  const handleYouTubeSearch = async () => {
+    if (!songTitle.trim()) return;
+    setYtSearching(true);
+    setYtResults([]);
+    setSelectedVideo(null);
+    try {
+      const res = await fetch(`/api/youtube/search?q=${encodeURIComponent(songTitle.trim())}`, {
+        headers: { 'x-admin-password': password },
+      });
+      if (!res.ok) {
+        const data = await res.json();
+        alert(data.error || 'YouTube 검색 실패');
+        return;
+      }
+      const data = await res.json();
+      setYtResults(data.results || []);
+    } catch {
+      alert('YouTube 검색 중 오류가 발생했습니다.');
+    } finally {
+      setYtSearching(false);
+    }
+  };
 
   const handleStart = async () => {
     if (!songTitle.trim()) {
@@ -37,7 +63,10 @@ export default function DequeueModal({
           'Content-Type': 'application/json',
           'x-admin-password': password,
         },
-        body: JSON.stringify({ song_title: songTitle.trim() }),
+        body: JSON.stringify({
+          song_title: songTitle.trim(),
+          youtube_video_id: selectedVideo?.videoId || null,
+        }),
       });
 
       if (!response.ok) {
@@ -46,6 +75,8 @@ export default function DequeueModal({
       }
 
       setSongTitle('');
+      setYtResults([]);
+      setSelectedVideo(null);
       onStart();
     } catch (error: any) {
       console.error('노래 시작 실패:', error);
@@ -57,12 +88,14 @@ export default function DequeueModal({
 
   const handleClose = () => {
     setSongTitle('');
+    setYtResults([]);
+    setSelectedVideo(null);
     onClose();
   };
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-lg shadow-xl p-6 max-w-md w-full mx-4">
+      <div className="bg-white rounded-lg shadow-xl p-6 max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
         <h2 className="text-2xl font-bold text-gray-900 mb-4">노래 시작</h2>
 
         <div className="mb-6 p-4 bg-purple-50 rounded-lg">
@@ -77,20 +110,77 @@ export default function DequeueModal({
           </div>
         </div>
 
-        <div className="mb-6">
+        <div className="mb-4">
           <label htmlFor="songTitle" className="block text-sm font-medium text-gray-700 mb-2">
             노래 제목
           </label>
-          <input
-            id="songTitle"
-            type="text"
-            value={songTitle}
-            onChange={(e) => setSongTitle(e.target.value)}
-            placeholder="노래 제목을 입력하세요"
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 text-gray-900"
-            disabled={isLoading}
-          />
+          <div className="flex gap-2">
+            <input
+              id="songTitle"
+              type="text"
+              value={songTitle}
+              onChange={(e) => setSongTitle(e.target.value)}
+              placeholder="노래 제목을 입력하세요"
+              className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 text-gray-900"
+              disabled={isLoading}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  e.preventDefault();
+                  handleYouTubeSearch();
+                }
+              }}
+            />
+            <button
+              type="button"
+              onClick={handleYouTubeSearch}
+              disabled={isLoading || ytSearching || !songTitle.trim()}
+              className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors whitespace-nowrap"
+            >
+              {ytSearching ? '검색 중...' : 'YouTube 검색'}
+            </button>
+          </div>
         </div>
+
+        {/* YouTube 검색 결과 */}
+        {ytResults.length > 0 && (
+          <div className="mb-6 space-y-2">
+            <div className="text-sm font-medium text-gray-700 mb-2">반주 영상 선택 (선택사항)</div>
+            {ytResults.map((video) => (
+              <button
+                key={video.videoId}
+                type="button"
+                onClick={() => setSelectedVideo(
+                  selectedVideo?.videoId === video.videoId ? null : video
+                )}
+                className={`w-full flex items-center gap-3 p-2 rounded-lg border-2 text-left transition-colors ${
+                  selectedVideo?.videoId === video.videoId
+                    ? 'border-purple-500 bg-purple-50'
+                    : 'border-gray-200 hover:border-gray-300'
+                }`}
+                disabled={isLoading}
+              >
+                <img
+                  src={video.thumbnailUrl}
+                  alt={video.title}
+                  className="w-32 h-20 object-cover rounded flex-shrink-0"
+                />
+                <div className="min-w-0 flex-1">
+                  <div className="text-sm font-medium text-gray-900 line-clamp-2" dangerouslySetInnerHTML={{ __html: video.title }} />
+                  <div className="text-xs text-gray-500 mt-1">{video.channelTitle}</div>
+                </div>
+                {selectedVideo?.videoId === video.videoId && (
+                  <div className="text-purple-600 font-bold text-lg flex-shrink-0">&#10003;</div>
+                )}
+              </button>
+            ))}
+          </div>
+        )}
+
+        {selectedVideo && (
+          <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded-lg text-sm text-green-800">
+            선택된 영상: <span className="font-medium" dangerouslySetInnerHTML={{ __html: selectedVideo.title }} />
+          </div>
+        )}
 
         <div className="flex gap-3">
           <button

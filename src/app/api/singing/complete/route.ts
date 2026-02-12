@@ -8,6 +8,7 @@ export interface SongHistory {
   reason: string;
   song_title: string;
   completed_at: string;
+  youtube_video_id: string | null;
 }
 
 export interface SingingSession {
@@ -16,6 +17,7 @@ export interface SingingSession {
   reason: string;
   song_title: string;
   started_at: string;
+  youtube_video_id: string | null;
 }
 
 export async function POST(request: NextRequest) {
@@ -39,11 +41,11 @@ export async function POST(request: NextRequest) {
 
       // 2. song_history에 삽입
       const insertStmt = db.prepare(`
-        INSERT INTO song_history (name, reason, song_title)
-        VALUES (?, ?, ?)
+        INSERT INTO song_history (name, reason, song_title, youtube_video_id)
+        VALUES (?, ?, ?, ?)
       `);
 
-      const info = insertStmt.run(session.name, session.reason, session.song_title);
+      const info = insertStmt.run(session.name, session.reason, session.song_title, session.youtube_video_id || null);
 
       // 3. singing_session에서 삭제
       db.prepare('DELETE FROM singing_session WHERE id = ?').run(session.id);

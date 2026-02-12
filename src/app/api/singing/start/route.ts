@@ -11,7 +11,7 @@ export async function POST(request: NextRequest) {
 
   try {
     const body = await request.json();
-    const { song_title } = body;
+    const { song_title, youtube_video_id } = body;
 
     // Validate song_title
     if (!song_title || song_title.trim() === '') {
@@ -48,18 +48,19 @@ export async function POST(request: NextRequest) {
 
       // Insert into singing_session
       const insertResult = db.prepare(
-        'INSERT INTO singing_session (name, reason, song_title) VALUES (?, ?, ?)'
-      ).run(nextItem.name, nextItem.reason, song_title.trim());
+        'INSERT INTO singing_session (name, reason, song_title, youtube_video_id) VALUES (?, ?, ?, ?)'
+      ).run(nextItem.name, nextItem.reason, song_title.trim(), youtube_video_id || null);
 
       // Get the newly created session
       const session = db.prepare(
-        'SELECT id, name, reason, song_title, started_at FROM singing_session WHERE id = ?'
+        'SELECT id, name, reason, song_title, started_at, youtube_video_id FROM singing_session WHERE id = ?'
       ).get(insertResult.lastInsertRowid) as {
         id: number;
         name: string;
         reason: string;
         song_title: string;
         started_at: string;
+        youtube_video_id: string | null;
       };
 
       return session;

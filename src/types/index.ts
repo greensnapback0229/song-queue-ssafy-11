@@ -12,6 +12,7 @@ export interface SongHistory {
   reason: string;
   song_title: string;
   completed_at: string;
+  youtube_video_id?: string | null;
 }
 
 export interface Comment {
@@ -26,4 +27,12 @@ export interface SingingSession {
   reason: string;
   song_title: string;
   started_at: string;
+  youtube_video_id?: string | null;
+}
+
+export interface YouTubeSearchResult {
+  videoId: string;
+  title: string;
+  channelTitle: string;
+  thumbnailUrl: string;
 }

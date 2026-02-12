@@ -4,6 +4,7 @@ import { useEffect, useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import type { SingingSession, Comment } from '@/types';
 import { useAdmin } from '@/context/AdminContext';
+import YouTubeBackground from '@/components/Singing/YouTubeBackground';
 
 export default function SingingPage() {
   const { isAdmin, password } = useAdmin();
@@ -176,11 +177,25 @@ export default function SingingPage() {
     );
   }
 
+  const hasVideo = !!session.youtube_video_id;
+
   return (
-    <div className="fixed inset-0 z-50 flex bg-gradient-to-br from-purple-900 via-indigo-900 to-purple-800">
+    <div className="fixed inset-0 z-50 flex">
+      {/* z-0: 배경 레이어 */}
+      {hasVideo ? (
+        <YouTubeBackground videoId={session.youtube_video_id!} />
+      ) : (
+        <div className="absolute inset-0 bg-gradient-to-br from-purple-900 via-indigo-900 to-purple-800" />
+      )}
+
+      {/* z-10: 반투명 스크림 (영상 위 가독성 확보) */}
+      {hasVideo && <div className="absolute inset-0 bg-black/40 z-10" />}
+
+      {/* z-20: 콘텐츠 */}
+      <div className="relative z-20 flex flex-1">
       {/* Main singing area */}
       <div className="flex-1 flex flex-col items-center justify-center p-8 text-white">
-        <div className="text-center space-y-8 max-w-4xl">
+        <div className="text-center space-y-8 max-w-4xl" style={{ textShadow: hasVideo ? '0 2px 8px rgba(0,0,0,0.8)' : 'none' }}>
           <div>
             <div className="text-2xl mb-4 text-purple-200">지금 부르는 사람</div>
             <div className="text-8xl font-bold mb-6 drop-shadow-2xl">
@@ -286,6 +301,7 @@ export default function SingingPage() {
           </div>
         </form>
       </div>
+      </div>{/* z-20 콘텐츠 래퍼 끝 */}
     </div>
   );
 }

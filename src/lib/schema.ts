@@ -37,4 +37,16 @@ export const initializeSchema = (db: any) => {
   db.exec(QUEUE_ITEMS_INDEX);
   db.exec(SONG_HISTORY_TABLE);
   db.exec(SINGING_SESSION_TABLE);
+
+  // F10: youtube_video_id 컬럼 추가 마이그레이션
+  try {
+    db.exec('ALTER TABLE singing_session ADD COLUMN youtube_video_id TEXT');
+  } catch {
+    // 이미 존재하면 무시
+  }
+  try {
+    db.exec('ALTER TABLE song_history ADD COLUMN youtube_video_id TEXT');
+  } catch {
+    // 이미 존재하면 무시
+  }
 };

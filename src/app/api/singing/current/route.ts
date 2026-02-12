@@ -6,7 +6,7 @@ export async function GET() {
     const db = getDb();
 
     const session = db.prepare(
-      'SELECT id, name, reason, song_title, started_at FROM singing_session LIMIT 1'
+      'SELECT id, name, reason, song_title, started_at, youtube_video_id FROM singing_session LIMIT 1'
     ).get();
 
     return NextResponse.json({ session: session || null });
