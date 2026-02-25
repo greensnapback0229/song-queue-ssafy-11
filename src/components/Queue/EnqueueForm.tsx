@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useAdmin } from '@/context/AdminContext';
+import { toast } from 'sonner';
 
 interface EnqueueFormProps {
   onAdd: () => void;
@@ -69,8 +70,10 @@ export default function EnqueueForm({ onAdd }: EnqueueFormProps) {
       setName('');
       setReason('');
       setDirection('back');
+      toast.success(`${name} 님이 큐에 추가되었습니다.`);
       onAdd();
     } catch (err) {
+      toast.error(err instanceof Error ? err.message : '추가에 실패했습니다.');
       setError(err instanceof Error ? err.message : '추가에 실패했습니다.');
     } finally {
       setIsLoading(false);

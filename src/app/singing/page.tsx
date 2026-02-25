@@ -6,8 +6,7 @@ import type { SingingSession, Comment } from '@/types';
 import { useAdmin } from '@/context/AdminContext';
 import YouTubeBackground from '@/components/Singing/YouTubeBackground';
 import { useTheme } from 'next-themes';
-import { Sun, Moon, MessageSquare, X, Send, Play } from 'lucide-react';
-
+import { Sun, Moon, MessageSquare, X, Send, Play } from 'lucide-react';import { toast } from 'sonner';
 export default function SingingPage() {
   const { isAdmin, password } = useAdmin();
   const router = useRouter();
@@ -169,7 +168,7 @@ export default function SingingPage() {
       }
     } catch (error) {
       console.error('Failed to complete session:', error);
-      alert('노래 완료 처리 실패');
+      toast.error('노래 완료 처리에 실패했습니다.');
       setIsCompleting(false);
     }
   };

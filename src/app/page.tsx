@@ -8,6 +8,7 @@ import QueueList from '@/components/Queue/QueueList';
 import DequeueModal from '@/components/Queue/DequeueModal';
 import RandomPicker from '@/components/Queue/RandomPicker';
 import { useAdmin } from '@/context/AdminContext';
+import { toast } from 'sonner';
 
 export default function Home() {
   const { isAdmin, password } = useAdmin();
@@ -34,7 +35,7 @@ export default function Home() {
 
   const handleDelete = async (id: number) => {
     if (!isAdmin) {
-      alert('관리자만 삭제할 수 있습니다.');
+      toast.error('관리자만 삭제할 수 있습니다.');
       return;
     }
 
@@ -51,9 +52,10 @@ export default function Home() {
       }
 
       await fetchQueue();
+      toast.success('삭제되었습니다.');
     } catch (error) {
       console.error('삭제 실패:', error);
-      alert('삭제에 실패했습니다.');
+      toast.error('삭제에 실패했습니다.');
     }
   };
 
@@ -152,10 +154,11 @@ export default function Home() {
       if (!response.ok) {
         throw new Error('위치 변경에 실패했습니다.');
       }
+      toast.success('순서가 변경되었습니다.');
     } catch (error) {
       console.error('순서 변경 중 오류:', error);
       setItems(previousItems); // Rollback
-      alert('순서 변경 중 오류가 발생했습니다.');
+      toast.error('순서 변경 중 오류가 발생했습니다.');
     }
   };
 

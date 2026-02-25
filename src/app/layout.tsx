@@ -3,6 +3,7 @@ import "./globals.css";
 import Header from "@/components/Layout/Header";
 import { AdminProvider } from "@/context/AdminContext";
 import { ThemeProvider } from "@/components/ThemeProvider";
+import { Toaster } from "sonner";
 
 export const metadata: Metadata = {
   title: "SSAFY 11반 노래 큐",
@@ -18,6 +19,7 @@ export default function RootLayout({
     <html lang="ko" suppressHydrationWarning>
       <body className="antialiased min-h-screen transition-colors duration-300">
         <ThemeProvider attribute="data-theme" defaultTheme="system" enableSystem>
+          <Toaster position="top-right" richColors duration={1250} />
           <AdminProvider>
             <Header />
             <main className="container mx-auto px-4 py-8 max-w-6xl">

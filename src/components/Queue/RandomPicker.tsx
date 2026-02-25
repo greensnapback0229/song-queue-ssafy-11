@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useAdmin } from '@/context/AdminContext';
 import { MEMBERS } from '@/constants/members';
+import { toast } from 'sonner';
 
 interface RandomPickerProps {
   onAdd: () => void;
@@ -180,6 +181,7 @@ export default function RandomPicker({ onAdd, ws }: RandomPickerProps) {
       }
 
       // 성공 → picker_end broadcast + 큐 새로고침
+      toast.success(`${winner} 님이 큐에 추가되었습니다.`);
       if (ws && ws.readyState === WebSocket.OPEN) {
         ws.send(JSON.stringify({ type: 'picker_end', password }));
       } else {
@@ -190,6 +192,7 @@ export default function RandomPicker({ onAdd, ws }: RandomPickerProps) {
         onAdd();
       }
     } catch {
+      toast.error('네트워크 오류가 발생했습니다.');
       setError('네트워크 오류가 발생했습니다.');
     } finally {
       setIsAdding(false);

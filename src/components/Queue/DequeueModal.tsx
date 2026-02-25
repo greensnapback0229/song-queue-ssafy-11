@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { QueueItem, YouTubeSearchResult } from '@/types';
 import { useAdmin } from '@/context/AdminContext';
+import { toast } from 'sonner';
 
 interface DequeueModalProps {
   isOpen: boolean;
@@ -38,13 +39,13 @@ export default function DequeueModal({
       });
       if (!res.ok) {
         const data = await res.json();
-        alert(data.error || 'YouTube 검색 실패');
+        toast.error(data.error || 'YouTube 검색 실패');
         return;
       }
       const data = await res.json();
       setYtResults(data.results || []);
     } catch {
-      alert('YouTube 검색 중 오류가 발생했습니다.');
+      toast.error('YouTube 검색 중 오류가 발생했습니다.');
     } finally {
       setYtSearching(false);
     }
@@ -63,7 +64,7 @@ export default function DequeueModal({
 
   const handleStart = async () => {
     if (!songTitle.trim()) {
-      alert('노래 제목을 입력해주세요.');
+      toast.error('노래 제목을 입력해주세요.');
       return;
     }
 
@@ -90,10 +91,11 @@ export default function DequeueModal({
       setYtResults([]);
       setSelectedVideo(null);
       setSearchMode('금영노래방');
+      toast.success('노래를 시작합니다!');
       onStart();
     } catch (error: any) {
       console.error('노래 시작 실패:', error);
-      alert(error.message || '노래 시작에 실패했습니다.');
+      toast.error(error.message || '노래 시작에 실패했습니다.');
     } finally {
       setIsLoading(false);
     }

@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAdmin } from '@/context/AdminContext';
+import { toast } from 'sonner';
 
 interface SongHistory {
   id: number;
@@ -69,9 +70,10 @@ export default function History() {
       }
 
       await fetchHistory();
+      toast.success('내역이 삭제되었습니다.');
     } catch (error) {
       console.error('삭제 실패:', error);
-      alert('삭제에 실패했습니다.');
+      toast.error('삭제에 실패했습니다.');
     }
   };
 
