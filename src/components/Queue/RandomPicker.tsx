@@ -221,81 +221,113 @@ export default function RandomPicker({ onAdd, ws }: RandomPickerProps) {
 
   return (
     <>
-      {/* 랜덤 뽑기 버튼 - 관리자만 */}
-      {isAdmin && (
-        <div className="bg-white rounded-lg shadow-sm p-6">
+      {/* 관리자 대시보드 - 뽑기 시작 버튼 */}
+      {isAdmin && phase === 'idle' && (
+        <div className="bg-white dark:bg-gray-900 rounded-[24px] shadow-[0_8px_30px_rgba(0,0,0,0.04)] p-6 border border-gray-100 dark:border-white/5 transition-colors duration-300">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-xl font-bold text-gray-900 dark:text-white flex items-center gap-2 transition-colors duration-300">
+              <span className="text-2xl">🎲</span>
+              랜덤 뽑기
+            </h3>
+            <span className="px-2 py-1 bg-blue-50 dark:bg-blue-500/10 text-toss-blue text-[10px] font-black rounded-lg uppercase tracking-wider transition-colors duration-300">Admin Only</span>
+          </div>
+          <p className="text-gray-500 dark:text-gray-400 text-sm mb-6 leading-relaxed font-medium transition-colors duration-300">
+            큐에 추가할 사람을 무작위로 결정합니다.<br />
+            실행 시 모든 참여자에게 화면이 공유됩니다.
+          </p>
           <button
             onClick={handleStartPicker}
-            disabled={phase !== 'idle'}
-            className="w-full bg-gradient-to-r from-amber-500 to-orange-500 text-white font-bold py-4 rounded-lg hover:from-amber-600 hover:to-orange-600 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-md hover:shadow-lg text-lg"
+            className="w-full py-4 bg-gray-900 dark:bg-white dark:text-black hover:bg-black dark:hover:bg-gray-200 text-white rounded-2xl font-bold text-lg shadow-xl shadow-gray-200 dark:shadow-none transition-all duration-300 active:scale-[0.98]"
           >
-            🎲 랜덤 뽑기
+            뽑기 시작하기
           </button>
         </div>
       )}
 
       {/* 룰렛 애니메이션 오버레이 - 모든 사용자 */}
       {phase === 'spinning' && (
-        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50">
-          <div className="text-center">
-            <p className="text-white text-lg mb-4 animate-pulse">두구두구두구...</p>
-            <div className="bg-white rounded-2xl shadow-2xl px-16 py-12 min-w-[320px]">
-              <p className="text-5xl font-black text-purple-600 transition-all">
-                {displayName}
-              </p>
+        <div className="fixed inset-0 bg-white/90 dark:bg-black/90 backdrop-blur-xl flex items-center justify-center z-[100] animate-in fade-in duration-500 transition-colors duration-500">
+          <div className="text-center space-y-8 max-w-sm w-full px-6">
+            <div className="relative">
+              <div className="absolute inset-0 bg-toss-blue/20 blur-3xl rounded-full" />
+              <div className="relative bg-white dark:bg-gray-900 rounded-[40px] shadow-[0_20px_60px_rgba(49,130,246,0.15)] py-20 px-8 border border-blue-50 dark:border-white/5 transition-colors duration-500">
+                 <p className="text-sm font-black text-toss-blue tracking-[0.2em] mb-6 animate-pulse uppercase">Searching...</p>
+                 <div className="h-24 flex items-center justify-center">
+                    <p className="text-4xl sm:text-5xl font-bold text-gray-900 dark:text-white tracking-tight transition-all duration-75 font-title">
+                      {displayName}
+                    </p>
+                 </div>
+              </div>
             </div>
+            <p className="text-gray-400 dark:text-gray-400 font-bold animate-bounce text-base transition-colors duration-500">
+              두구두구두구... 🥁
+            </p>
           </div>
         </div>
       )}
 
       {/* 당첨 결과 모달 - 모든 사용자 */}
       {phase === 'result' && (
-        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50">
+        <div className="fixed inset-0 bg-white/95 dark:bg-black/95 backdrop-blur-2xl flex items-center justify-center z-[100] animate-in fade-in zoom-in-95 duration-500 transition-colors duration-500">
           <div
-            className="bg-white rounded-2xl shadow-2xl p-8 max-w-md w-full mx-4 text-center animate-[scaleIn_0.3s_ease-out]"
+            className="bg-white dark:bg-gray-900 rounded-[40px] shadow-[0_32px_80px_rgba(0,0,0,0.1)] p-10 max-w-md w-full mx-4 text-center border border-gray-100 dark:border-white/10 flex flex-col items-center transition-colors duration-500"
           >
-            <div className="text-6xl mb-4">🎉</div>
-            <p className="text-gray-600 text-lg mb-2">당첨!</p>
-            <p className="text-5xl font-black text-purple-600 mb-8">
-              {winner}
-            </p>
+            <div className="w-24 h-24 bg-blue-50 dark:bg-blue-500/10 rounded-full flex items-center justify-center text-5xl mb-8 animate-bounce transition-colors duration-500">
+              🎉
+            </div>
+            
+            <div className="space-y-4 mb-10">
+              <p className="text-toss-blue font-black tracking-widest uppercase text-xs">Winner Selected</p>
+              <h2 className="text-5xl font-bold text-gray-900 dark:text-white tracking-tighter font-title transition-colors duration-500">
+                {winner}
+              </h2>
+            </div>
 
             {error && (
-              <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm mb-4">
+              <div className="w-full bg-red-50 dark:bg-red-500/10 text-red-500 dark:text-red-400 px-6 py-4 rounded-2xl text-sm font-bold mb-6">
                 {error}
               </div>
             )}
 
             {/* 관리자: 액션 버튼 */}
             {isAdmin ? (
-              <div className="space-y-3">
+              <div className="w-full space-y-3">
                 <button
                   onClick={handleAddToQueue}
                   disabled={isAdding}
-                  className="w-full bg-gradient-to-r from-purple-600 to-indigo-600 text-white font-medium py-3 rounded-lg hover:from-purple-700 hover:to-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-md hover:shadow-lg"
+                  className="w-full bg-toss-blue hover:bg-toss-blue-hover text-white font-bold py-4 rounded-2xl shadow-xl shadow-blue-500/20 transition-all active:scale-[0.98] disabled:opacity-50"
                 >
-                  {isAdding ? '추가 중...' : '큐에 추가'}
+                  {isAdding ? '추가 중...' : '바로 큐에 추가하기'}
                 </button>
-                <button
-                  onClick={handleRetry}
-                  disabled={isAdding}
-                  className="w-full bg-gray-100 text-gray-700 font-medium py-3 rounded-lg hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
-                >
-                  다시 뽑기
-                </button>
-                <button
-                  onClick={handleClose}
-                  disabled={isAdding}
-                  className="w-full text-gray-500 font-medium py-2 hover:text-gray-700 transition-colors"
-                >
-                  닫기
-                </button>
+                <div className="grid grid-cols-2 gap-3">
+                   <button
+                    onClick={handleRetry}
+                    disabled={isAdding}
+                    className="bg-gray-100 dark:bg-white/10 text-gray-700 dark:text-gray-300 font-bold py-4 rounded-2xl hover:bg-gray-200 dark:hover:bg-white/20 transition-all active:scale-[0.95]"
+                  >
+                    다시 뽑기
+                  </button>
+                  <button
+                    onClick={handleClose}
+                    disabled={isAdding}
+                    className="bg-gray-900 dark:bg-white dark:text-black text-white font-bold py-4 rounded-2xl hover:bg-black dark:hover:bg-gray-200 transition-all active:scale-[0.95]"
+                  >
+                    닫기
+                  </button>
+                </div>
               </div>
             ) : (
               /* 일반 사용자: 안내 문구 */
-              <p className="text-gray-400 text-sm animate-pulse">
-                관리자가 결과를 처리 중입니다...
-              </p>
+              <div className="flex flex-col items-center gap-4">
+                 <div className="flex gap-1.5">
+                    <div className="w-2 h-2 bg-toss-blue rounded-full animate-bounce [animation-delay:-0.3s]" />
+                    <div className="w-2 h-2 bg-toss-blue rounded-full animate-bounce [animation-delay:-0.15s]" />
+                    <div className="w-2 h-2 bg-toss-blue rounded-full animate-bounce" />
+                 </div>
+                 <p className="text-gray-400 dark:text-gray-500 font-bold text-lg italic">
+                   관리자가 운명을 결정하고 있습니다...
+                 </p>
+              </div>
             )}
           </div>
         </div>

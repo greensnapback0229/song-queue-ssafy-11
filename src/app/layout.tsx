@@ -1,18 +1,8 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import Header from "@/components/Layout/Header";
 import { AdminProvider } from "@/context/AdminContext";
-
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
-});
+import { ThemeProvider } from "@/components/ThemeProvider";
 
 export const metadata: Metadata = {
   title: "SSAFY 11반 노래 큐",
@@ -25,16 +15,16 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="ko">
-      <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased bg-gray-50`}
-      >
-        <AdminProvider>
-          <Header />
-          <main className="container mx-auto px-4 py-8">
-            {children}
-          </main>
-        </AdminProvider>
+    <html lang="ko" suppressHydrationWarning>
+      <body className="antialiased min-h-screen transition-colors duration-300">
+        <ThemeProvider attribute="data-theme" defaultTheme="system" enableSystem>
+          <AdminProvider>
+            <Header />
+            <main className="container mx-auto px-4 py-8 max-w-6xl">
+              {children}
+            </main>
+          </AdminProvider>
+        </ThemeProvider>
       </body>
     </html>
   );
