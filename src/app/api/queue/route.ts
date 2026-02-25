@@ -3,6 +3,8 @@ import { getDb } from '@/lib/db';
 import { QueueItem } from '@/types';
 import { verifyPassword } from '@/lib/auth';
 
+export const dynamic = 'force-dynamic';
+
 export async function GET() {
   try {
     const db = getDb();
