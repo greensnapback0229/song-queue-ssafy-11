@@ -195,7 +195,7 @@ export default function DequeueModal({
                       }`}
                     >
                       <div className="relative w-32 aspect-video rounded-xl overflow-hidden flex-shrink-0 shadow-sm transition-transform group-hover:scale-105">
-                        <img src={result.thumbnail} alt="" className="w-full h-full object-cover" />
+                        <img src={result.thumbnailUrl} alt="" className="w-full h-full object-cover" />
                         <div className="absolute inset-0 bg-black/10 transition-opacity group-hover:opacity-0" />
                       </div>
                       <div className="flex-1 min-w-0 pr-2">

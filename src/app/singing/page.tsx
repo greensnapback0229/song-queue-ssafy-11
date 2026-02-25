@@ -6,7 +6,9 @@ import type { SingingSession, Comment } from '@/types';
 import { useAdmin } from '@/context/AdminContext';
 import YouTubeBackground from '@/components/Singing/YouTubeBackground';
 import { useTheme } from 'next-themes';
-import { Sun, Moon, MessageSquare, X, Send, Play } from 'lucide-react';import { toast } from 'sonner';
+import { Sun, Moon, MessageSquare, X, Send, Play } from 'lucide-react';
+import { toast } from 'sonner';
+
 export default function SingingPage() {
   const { isAdmin, password } = useAdmin();
   const router = useRouter();
