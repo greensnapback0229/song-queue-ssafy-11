@@ -6,7 +6,7 @@ import type { SingingSession, Comment } from '@/types';
 import { useAdmin } from '@/context/AdminContext';
 import YouTubeBackground from '@/components/Singing/YouTubeBackground';
 import { useTheme } from 'next-themes';
-import { Sun, Moon, MessageSquare, X, Send, Play } from 'lucide-react';
+import { Sun, Moon, MessageSquare, X, Send, Volume2, VolumeX } from 'lucide-react';
 import { toast } from 'sonner';
 
 export default function SingingPage() {
@@ -21,6 +21,7 @@ export default function SingingPage() {
   const [wsConnected, setWsConnected] = useState(false);
   const [isCompleting, setIsCompleting] = useState(false);
   const [isChatOpen, setIsChatOpen] = useState(true);
+  const [bgMuted, setBgMuted] = useState(true);
   const wsRef = useRef<WebSocket | null>(null);
   const commentsEndRef = useRef<HTMLDivElement>(null);
 
@@ -199,86 +200,84 @@ export default function SingingPage() {
   const hasVideo = !!session.youtube_video_id;
 
   return (
-    <div className="fixed inset-0 z-50 flex bg-white dark:bg-gray-950 overflow-hidden font-pretendard transition-colors duration-300">
+    <div className="fixed inset-0 z-50 flex bg-white dark:bg-gray-950 overflow-hidden font-sans transition-colors duration-300">
       {/* Main singing area */}
-      <div className="flex-1 relative flex flex-col items-center justify-center p-8 text-gray-900 dark:text-white">
-        {/* 상단 컨트롤 버튼 그룹 */}
-        <div className="absolute top-8 right-8 z-40 flex items-center gap-3">
-          {/* 테마 토글 버튼 */}
-          {mounted && (
-            <button
-              onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
-              className="w-12 h-12 bg-gray-100 dark:bg-white/10 hover:bg-gray-200 dark:hover:bg-white/20 backdrop-blur-md border border-gray-200 dark:border-white/10 rounded-2xl flex items-center justify-center transition-all shadow-sm"
-              aria-label="테마 변경"
-            >
-              {theme === 'dark' ? <Sun size={20} className="text-white" /> : <Moon size={20} className="text-gray-600" />}
-            </button>
-          )}
+      <div className="flex-1 relative overflow-hidden text-gray-900 dark:text-white">
+        {/* Top bar */}
+        <div className="absolute top-4 left-4 right-4 z-40">
+          <div className="mx-auto max-w-5xl">
+            <div className="flex items-start justify-between gap-3 rounded-3xl border border-gray-200/70 dark:border-white/10 bg-white/70 dark:bg-black/30 backdrop-blur-xl px-4 py-3 shadow-lg">
+              <div className="min-w-0">
+                <div className="flex items-center gap-2">
+                  <span className="inline-flex items-center gap-2 rounded-full bg-toss-blue/10 dark:bg-toss-blue/20 border border-toss-blue/20 dark:border-toss-blue/30 px-3 py-1">
+                    <span className="h-2 w-2 rounded-full bg-toss-blue shadow-[0_0_10px_rgba(49,130,246,0.8)]" />
+                    <span className="text-[11px] font-black text-toss-blue tracking-wider uppercase">Live</span>
+                  </span>
+                  <span className="text-xs font-bold text-gray-500 dark:text-gray-300 truncate">
+                    {session.reason}
+                  </span>
+                </div>
 
-          {/* 채팅 토글 버튼 */}
-          <button
-            onClick={() => setIsChatOpen(!isChatOpen)}
-            className={`w-12 h-12 bg-gray-100 dark:bg-white/10 hover:bg-gray-200 dark:hover:bg-white/20 backdrop-blur-md border border-gray-200 dark:border-white/10 rounded-2xl flex items-center justify-center transition-all shadow-sm ${isChatOpen ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}
-          >
-            <MessageSquare size={20} className="text-gray-600 dark:text-white" />
-          </button>
+                <div className="mt-2 flex flex-wrap items-baseline gap-x-3 gap-y-1 min-w-0">
+                  <div className="font-title font-black text-lg sm:text-2xl text-gray-950 dark:text-white truncate max-w-[70vw]">
+                    {session.song_title}
+                  </div>
+                  <div className="text-sm sm:text-base font-black text-gray-600 dark:text-gray-200 truncate max-w-[60vw]">
+                    {session.name}
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2 shrink-0">
+                {isAdmin && (
+                  <button
+                    onClick={handleComplete}
+                    disabled={isCompleting}
+                    className="h-10 px-4 rounded-2xl bg-gray-900 text-white dark:bg-white dark:text-gray-950 font-black shadow-md transition-all active:scale-[0.98] disabled:opacity-50 disabled:grayscale"
+                  >
+                    {isCompleting ? '종료 중...' : '노래 종료'}
+                  </button>
+                )}
+
+                <button
+                  onClick={() => setBgMuted((prev) => !prev)}
+                  className="w-10 h-10 bg-gray-100/90 dark:bg-white/10 hover:bg-gray-200/90 dark:hover:bg-white/20 backdrop-blur-md border border-gray-200/70 dark:border-white/10 rounded-2xl flex items-center justify-center transition-all shadow-sm"
+                  aria-label={bgMuted ? '사운드 켜기' : '사운드 끄기'}
+                >
+                  {bgMuted ? <VolumeX size={18} className="text-gray-700 dark:text-white" /> : <Volume2 size={18} className="text-gray-700 dark:text-white" />}
+                </button>
+
+                {mounted && (
+                  <button
+                    onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+                    className="w-10 h-10 bg-gray-100/90 dark:bg-white/10 hover:bg-gray-200/90 dark:hover:bg-white/20 backdrop-blur-md border border-gray-200/70 dark:border-white/10 rounded-2xl flex items-center justify-center transition-all shadow-sm"
+                    aria-label="테마 변경"
+                  >
+                    {theme === 'dark' ? <Sun size={18} className="text-white" /> : <Moon size={18} className="text-gray-700" />}
+                  </button>
+                )}
+
+                <button
+                  onClick={() => setIsChatOpen(!isChatOpen)}
+                  className={`w-10 h-10 bg-gray-100/90 dark:bg-white/10 hover:bg-gray-200/90 dark:hover:bg-white/20 backdrop-blur-md border border-gray-200/70 dark:border-white/10 rounded-2xl flex items-center justify-center transition-all shadow-sm ${isChatOpen ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}
+                  aria-label="채팅 열기"
+                >
+                  <MessageSquare size={18} className="text-gray-700 dark:text-white" />
+                </button>
+              </div>
+            </div>
+          </div>
         </div>
 
         {/* 배경 레이어 */}
         {hasVideo ? (
           <>
-            <YouTubeBackground videoId={session.youtube_video_id!} />
-            <div className="absolute inset-0 bg-white/30 dark:bg-black/50 backdrop-blur-[1px] z-10 transition-colors duration-300" />
+            <YouTubeBackground videoId={session.youtube_video_id!} muted={bgMuted} />
+            <div className="absolute inset-0 bg-black/10 dark:bg-black/35 z-10 transition-colors duration-300" />
           </>
         ) : (
           <div className="absolute inset-0 bg-gradient-to-br from-gray-50 via-white to-gray-100 dark:from-gray-900 dark:via-gray-950 dark:to-black transition-colors duration-300" />
         )}
-
-        {/* 콘텐츠 */}
-        <div className="relative z-20 text-center space-y-10 max-w-5xl animate-in zoom-in-95 duration-1000">
-          <div className="space-y-4">
-            <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-toss-blue/10 dark:bg-toss-blue/20 rounded-full border border-toss-blue/20 dark:border-toss-blue/30 scale-100 animate-pulse">
-              <span className="w-2 h-2 bg-toss-blue rounded-full shadow-[0_0_8px_rgba(49,130,246,0.8)]" />
-              <span className="text-xs font-bold text-toss-blue tracking-wider uppercase">Live performance</span>
-            </div>
-            
-            <div className="space-y-2">
-              <div className="text-gray-500 dark:text-gray-400 text-base font-bold">지금 부르는 사람</div>
-              <h1 className="text-6xl sm:text-7xl font-bold leading-none tracking-tight drop-shadow-[0_10px_30px_rgba(0,0,0,0.1)] dark:drop-shadow-[0_10px_30px_rgba(0,0,0,0.5)] font-title text-gray-900 dark:text-white">
-                {session.name}
-              </h1>
-            </div>
-          </div>
-
-          <div className="space-y-6">
-            <div className="space-y-3">
-              <div className="text-gray-500 dark:text-gray-400 text-base font-bold">노래 제목</div>
-              <div className="text-3xl sm:text-4xl font-black text-gray-950 dark:text-white px-8 py-4 bg-white/50 dark:bg-white/5 backdrop-blur-md rounded-[32px] border border-gray-200 dark:border-white/10 shadow-2xl inline-block font-title">
-                {session.song_title}
-              </div>
-            </div>
-
-            <div className="bg-gray-50/50 dark:bg-black/20 backdrop-blur-sm p-5 rounded-[24px] border border-gray-200 dark:border-white/5 inline-block mx-auto">
-              <div className="text-xs font-bold text-gray-400 dark:text-gray-500 mb-1">벌칙 사유</div>
-              <div className="text-lg text-gray-700 dark:text-gray-300 font-medium">
-                {session.reason}
-              </div>
-            </div>
-          </div>
-
-          {isAdmin && (
-            <div className="pt-8">
-              <button
-                onClick={handleComplete}
-                disabled={isCompleting}
-                className="group relative px-16 py-5 bg-gray-900 dark:bg-white text-white dark:text-gray-950 font-black text-2xl rounded-[24px] shadow-[0_15px_40px_rgba(255,255,255,0.05)] dark:shadow-[0_15px_40px_rgba(255,255,255,0.15)] transition-all hover:scale-105 active:scale-95 disabled:grayscale disabled:opacity-50"
-              >
-                {isCompleting ? '종료 중...' : '노래 종료하기'}
-                <div className="absolute -inset-1 bg-white/20 rounded-[28px] blur-lg opacity-0 group-hover:opacity-100 transition-opacity" />
-              </button>
-            </div>
-          )}
-        </div>
       </div>
 
       {/* Comments sidebar */}
