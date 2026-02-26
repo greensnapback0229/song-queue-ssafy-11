@@ -49,4 +49,11 @@ export const initializeSchema = (db: any) => {
   } catch {
     // 이미 존재하면 무시
   }
+  
+  // DnD 지원: queue_items 테이블에 position 컬럼 추가 (기존 DB 대응)
+  try {
+    db.exec('ALTER TABLE queue_items ADD COLUMN position INTEGER DEFAULT 0');
+  } catch {
+    // 이미 존재하거나 테이블이 없으면 무시
+  }
 };

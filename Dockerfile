@@ -33,8 +33,9 @@ COPY --from=builder /app/src ./src
 COPY --from=builder /app/next.config.ts ./next.config.ts
 COPY --from=builder /app/tsconfig.json ./tsconfig.json
 
-# 프로덕션 의존성만 설치 (tsx는 devDependency이므로 별도 설치)
-RUN npm ci --omit=dev && npm install tsx
+# 프로덕션 및 실행에 필요한 의존성 설치
+RUN npm install tsx typescript --save-prod
+RUN npm ci --omit=dev
 
 # data 디렉토리 생성 (SQLite DB 저장)
 RUN mkdir -p /app/data

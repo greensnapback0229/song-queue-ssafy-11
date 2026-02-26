@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { QueueItem, YouTubeSearchResult } from '@/types';
 import { useAdmin } from '@/context/AdminContext';
+import { toast } from 'sonner';
 
 interface DequeueModalProps {
   isOpen: boolean;
@@ -38,13 +39,13 @@ export default function DequeueModal({
       });
       if (!res.ok) {
         const data = await res.json();
-        alert(data.error || 'YouTube 검색 실패');
+        toast.error(data.error || 'YouTube 검색 실패');
         return;
       }
       const data = await res.json();
       setYtResults(data.results || []);
     } catch {
-      alert('YouTube 검색 중 오류가 발생했습니다.');
+      toast.error('YouTube 검색 중 오류가 발생했습니다.');
     } finally {
       setYtSearching(false);
     }
@@ -63,7 +64,7 @@ export default function DequeueModal({
 
   const handleStart = async () => {
     if (!songTitle.trim()) {
-      alert('노래 제목을 입력해주세요.');
+      toast.error('노래 제목을 입력해주세요.');
       return;
     }
 
@@ -90,10 +91,11 @@ export default function DequeueModal({
       setYtResults([]);
       setSelectedVideo(null);
       setSearchMode('금영노래방');
+      toast.success('노래를 시작합니다!');
       onStart();
     } catch (error: any) {
       console.error('노래 시작 실패:', error);
-      alert(error.message || '노래 시작에 실패했습니다.');
+      toast.error(error.message || '노래 시작에 실패했습니다.');
     } finally {
       setIsLoading(false);
     }
@@ -108,137 +110,146 @@ export default function DequeueModal({
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-lg shadow-xl p-6 max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
-        <h2 className="text-2xl font-bold text-gray-900 mb-4">노래 시작</h2>
-
-        <div className="mb-6 p-4 bg-purple-50 rounded-lg">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-sm text-gray-600">다음 순서</span>
-            <span className="text-lg font-bold text-purple-600">
-              {nextPerson.name}
-            </span>
-          </div>
-          <div className="text-sm text-gray-700">
-            <span className="font-medium">벌칙 사유:</span> {nextPerson.reason}
-          </div>
-        </div>
-
-        <div className="mb-4">
-          <label htmlFor="songTitle" className="block text-sm font-medium text-gray-700 mb-2">
-            노래 제목
-          </label>
-          <div className="flex gap-2">
-            <input
-              id="songTitle"
-              type="text"
-              value={songTitle}
-              onChange={(e) => setSongTitle(e.target.value)}
-              placeholder="노래 제목을 입력하세요"
-              className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 text-gray-900"
-              disabled={isLoading}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter') {
-                  e.preventDefault();
-                  handleYouTubeSearch();
-                }
-              }}
-            />
-            <button
-              type="button"
-              onClick={handleYouTubeSearch}
-              disabled={isLoading || ytSearching || !songTitle.trim()}
-              className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors whitespace-nowrap"
-            >
-              {ytSearching ? '검색 중...' : 'YouTube 검색'}
-            </button>
-          </div>
-        </div>
-
-        {/* YouTube 검색 결과 */}
-        {ytResults.length > 0 && (
-          <div className="mb-6 space-y-2">
-            <div className="text-sm font-medium text-gray-700 mb-1">반주 영상 선택 (선택사항)</div>
-            <div className="p-3 bg-amber-50 border border-amber-300 rounded-lg text-sm text-amber-800 leading-relaxed">
-              <p className="font-bold">노래방 공식 영상은 YouTube에서 임베딩을 허용하지 않습니다.</p>
-              <p className="mt-1">금영노래방은 임베딩을 허용합니다. 미리보기로 재생 가능 여부를 확인해주세요.</p>
-            </div>
-            {ytResults.map((video) => {
-              const isSelected = selectedVideo?.videoId === video.videoId;
-              return (
-                <div key={video.videoId}>
-                  <button
-                    type="button"
-                    onClick={() => setSelectedVideo(isSelected ? null : video)}
-                    className={`w-full flex items-center gap-3 p-2 rounded-lg border-2 text-left transition-colors ${
-                      isSelected
-                        ? 'border-purple-500 bg-purple-50'
-                        : 'border-gray-200 hover:border-gray-300'
-                    }`}
-                    disabled={isLoading}
-                  >
-                    <img
-                      src={video.thumbnailUrl}
-                      alt={video.title}
-                      className="w-32 h-20 object-cover rounded flex-shrink-0"
-                    />
-                    <div className="min-w-0 flex-1">
-                      <div className="text-sm font-medium text-gray-900 line-clamp-2" dangerouslySetInnerHTML={{ __html: video.title }} />
-                      <div className="text-xs text-gray-500 mt-1">{video.channelTitle}</div>
-                    </div>
-                    {isSelected ? (
-                      <div className="text-purple-600 font-bold text-lg flex-shrink-0">&#10003;</div>
-                    ) : (
-                      <div className="text-xs text-gray-400 flex-shrink-0">미리보기</div>
-                    )}
-                  </button>
-                  {/* 토글 미리보기 */}
-                  {isSelected && (
-                    <div className="mt-1 mb-2">
-                      <div className="relative w-full rounded-lg overflow-hidden bg-black" style={{ aspectRatio: '16/9' }}>
-                        <iframe
-                          src={`https://www.youtube.com/embed/${video.videoId}?autoplay=0&controls=1`}
-                          allow="encrypted-media"
-                          allowFullScreen
-                          className="absolute inset-0 w-full h-full border-0"
-                        />
-                      </div>
-                      <div className="mt-1 text-xs text-gray-500">
-                        재생이 안 되면 다른 영상을 선택하세요.
-                      </div>
-                    </div>
-                  )}
-                </div>
-              );
-            })}
-            <button
-              type="button"
-              onClick={handleToggleSearch}
-              disabled={ytSearching}
-              className="w-full text-center py-2 text-sm text-blue-600 hover:text-blue-800 underline disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {ytSearching ? '검색 중...' : searchMode === '금영노래방' ? '다른 검색결과 보기 (가사 MR)' : '금영노래방 검색결과 보기'}
-            </button>
-          </div>
-        )}
-
-        <div className="flex gap-3">
-          <button
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+      {/* Backdrop */}
+      <div 
+        className="absolute inset-0 bg-white/80 dark:bg-black/80 backdrop-blur-md animate-in fade-in duration-300" 
+        onClick={handleClose} 
+      />
+      
+      {/* Modal Content */}
+      <div className="relative bg-white dark:bg-gray-900 w-full max-w-2xl rounded-[40px] shadow-[0_32px_80px_rgba(0,0,0,0.12)] border border-gray-100 dark:border-white/10 overflow-hidden animate-in fade-in zoom-in-95 duration-300 flex flex-col max-h-[90vh] transition-colors duration-300">
+        {/* Header */}
+        <div className="p-8 pb-4 flex items-center justify-between">
+          <h2 className="text-2xl font-black text-gray-900 dark:text-white tracking-tight">🎤 노래 시작하기</h2>
+          <button 
             onClick={handleClose}
-            disabled={isLoading}
-            className="flex-1 px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            className="w-10 h-10 rounded-full bg-gray-50 dark:bg-white/5 flex items-center justify-center text-gray-400 hover:bg-gray-100 dark:hover:bg-white/10 transition-colors"
           >
-            취소
+            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
           </button>
+        </div>
+
+        <div className="px-8 pb-8 overflow-y-auto space-y-8 custom-scrollbar">
+          {/* Next Singer Card */}
+          <div className="bg-blue-50/50 dark:bg-blue-500/10 rounded-3xl p-6 border border-blue-100/50 dark:border-blue-500/20 flex items-center gap-5 transition-colors duration-300">
+            <div className="w-16 h-16 bg-toss-blue rounded-2xl flex items-center justify-center text-white text-3xl font-bold shadow-lg shadow-blue-500/20 transition-all">
+              {nextPerson.name[0]}
+            </div>
+            <div>
+              <p className="text-xs font-black text-toss-blue uppercase tracking-widest mb-1 transition-colors duration-300">Next Singer</p>
+              <h3 className="text-2xl font-black text-gray-900 dark:text-white leading-none transition-colors duration-300">{nextPerson.name}</h3>
+              <p className="text-gray-500 dark:text-gray-400 font-medium mt-1.5 transition-colors duration-300">{nextPerson.reason}</p>
+            </div>
+          </div>
+
+          {/* Form */}
+          <div className="space-y-6">
+            <div className="space-y-3">
+              <label htmlFor="songTitle" className="block text-sm font-bold text-gray-600 dark:text-gray-400 ml-1 italic transition-colors duration-300">
+                무슨 노래를 부를까요?
+              </label>
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  id="songTitle"
+                  value={songTitle}
+                  onChange={(e) => setSongTitle(e.target.value)}
+                  className="flex-1 px-6 py-4 bg-gray-50 dark:bg-white/5 border-none rounded-2xl focus:ring-2 focus:ring-toss-blue focus:bg-white dark:focus:bg-gray-800 outline-none transition-all duration-300 text-gray-900 dark:text-white font-bold text-lg placeholder:text-gray-300 dark:placeholder:text-gray-500 shadow-inner"
+                  placeholder="예: 응급실, 가시..."
+                />
+                <button
+                  onClick={handleYouTubeSearch}
+                  disabled={ytSearching || !songTitle.trim()}
+                  className="px-6 bg-gray-900 dark:bg-white dark:text-black hover:bg-black dark:hover:bg-gray-100 text-white rounded-2xl font-bold transition-all active:scale-95 disabled:opacity-20"
+                >
+                  {ytSearching ? '검색 중' : '검색'}
+                </button>
+              </div>
+            </div>
+
+            {/* YouTube Area */}
+            {(ytResults.length > 0 || ytSearching) && (
+              <div className="space-y-4 animate-in fade-in slide-in-from-top-2">
+                <div className="flex items-center justify-between px-1">
+                   <h4 className="text-sm font-black text-gray-400 dark:text-gray-400 uppercase tracking-widest">YouTube 검색 결과</h4>
+                   <button 
+                    onClick={handleToggleSearch}
+                    className="text-xs font-bold text-toss-blue hover:underline underline-offset-4"
+                   >
+                    {searchMode === '금영노래방' ? '가사 MR로 전환' : '노래방 모드로 전환'}
+                   </button>
+                </div>
+
+                <div className="grid grid-cols-1 gap-3">
+                  {ytResults.map((result) => (
+                    <button
+                      key={result.videoId}
+                      onClick={() => setSelectedVideo(result)}
+                      className={`flex items-center gap-4 p-3 rounded-2xl transition-all duration-300 border-2 text-left group ${
+                        selectedVideo?.videoId === result.videoId
+                          ? 'border-toss-blue bg-blue-50/50 dark:bg-blue-500/10'
+                          : 'border-transparent bg-gray-50 dark:bg-white/5 hover:bg-gray-100 dark:hover:bg-white/10'
+                      }`}
+                    >
+                      <div className="relative w-32 aspect-video rounded-xl overflow-hidden flex-shrink-0 shadow-sm transition-transform group-hover:scale-105">
+                        <img src={result.thumbnailUrl} alt="" className="w-full h-full object-cover" />
+                        <div className="absolute inset-0 bg-black/10 transition-opacity group-hover:opacity-0" />
+                      </div>
+                      <div className="flex-1 min-w-0 pr-2">
+                        <p className="font-bold text-gray-900 dark:text-white text-sm line-clamp-2 leading-snug transition-colors duration-300">
+                          {decodeHtmlEntities(result.title)}
+                        </p>
+                      </div>
+                      {selectedVideo?.videoId === result.videoId && (
+                        <div className="w-6 h-6 bg-toss-blue rounded-full flex items-center justify-center text-white shrink-0">
+                          <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                            <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                          </svg>
+                        </div>
+                      )}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Footer */}
+        <div className="p-8 pt-4 bg-gray-50/50 dark:bg-white/5 border-t border-gray-100 dark:border-white/10 mt-auto">
           <button
             onClick={handleStart}
             disabled={isLoading || !songTitle.trim()}
-            className="flex-1 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            className="w-full py-5 bg-toss-blue hover:bg-toss-blue-hover text-white rounded-[24px] font-black text-xl shadow-xl shadow-blue-500/20 transition-all active:scale-[0.98] disabled:opacity-20 disabled:grayscale"
           >
-            {isLoading ? '처리 중...' : '노래 시작'}
+            {isLoading ? '준비 중...' : '노래방 시작!'}
           </button>
         </div>
       </div>
+      
+      <style jsx>{`
+        .custom-scrollbar::-webkit-scrollbar {
+          width: 4px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+          background: transparent;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+          background: #e5e7eb;
+          border-radius: 10px;
+        }
+      `}</style>
     </div>
   );
+}
+
+// Utility to decode HTML entities in YouTube titles
+function decodeHtmlEntities(text: string) {
+  if (typeof document === 'undefined') return text;
+  const textarea = document.createElement('textarea');
+  textarea.innerHTML = text;
+  return textarea.value;
 }

@@ -1,26 +1,93 @@
 @import "tailwindcss";
+@import "pretendard/dist/web/static/pretendard.css";
+
+@custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
+
+/* Gmarket Sans - Modern Tech Title Font */
+@font-face {
+  font-family: 'GmarketSans';
+  font-weight: 300;
+  font-style: normal;
+  src: url('https://fastly.jsdelivr.net/gh/projectnoonnu/noonfonts_2001@1.1/GmarketSansLight.woff') format('woff');
+}
+@font-face {
+  font-family: 'GmarketSans';
+  font-weight: 500;
+  font-style: normal;
+  src: url('https://fastly.jsdelivr.net/gh/projectnoonnu/noonfonts_2001@1.1/GmarketSansMedium.woff') format('woff');
+}
+@font-face {
+  font-family: 'GmarketSans';
+  font-weight: 700;
+  font-style: normal;
+  src: url('https://fastly.jsdelivr.net/gh/projectnoonnu/noonfonts_2001@1.1/GmarketSansBold.woff') format('woff');
+}
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #f2f4f6; /* Toss gray 50 */
+  --foreground: #191f28; /* Toss gray 900 */
+  --toss-blue: #3182f6;
+  --toss-blue-hover: #1b64da;
+  --card-background: #ffffff;
+  --border-color: #f1f3f5;
+  --muted-foreground: #8b95a1;
+}
+
+[data-theme='dark'] {
+  --background: #111111;
+  --foreground: #f9fafb;
+  --toss-blue: #3182f6;
+  --toss-blue-hover: #5498ff;
+  --card-background: #1c1c1e;
+  --border-color: #2c2c2e;
+  --muted-foreground: #9ca3af;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  --color-toss-blue: var(--toss-blue);
+  --color-toss-blue-hover: var(--color-toss-blue-hover);
+  --color-card-background: var(--card-background);
+  --color-border-color: var(--border-color);
+  --color-muted-foreground: var(--muted-foreground);
+  --font-sans: "Pretendard", -apple-system, BlinkMacSystemFont, system-ui, Roboto, sans-serif;
+  --font-title: "GmarketSans", "Pretendard", sans-serif;
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+.font-title {
+  font-family: var(--font-title);
+}
+
+.toss-card {
+  background: var(--card-background);
+  border-radius: 20px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+  transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+}
+
+.toss-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+}
+
+.toss-button {
+  background-color: var(--toss-blue);
+  color: white;
+  border-radius: 12px;
+  padding: 12px 20px;
+  font-weight: 600;
+  transition: background-color 0.2s;
+}
+
+.toss-button:hover {
+  background-color: var(--toss-blue-hover);
 }
