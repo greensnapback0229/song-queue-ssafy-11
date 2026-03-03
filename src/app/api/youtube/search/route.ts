@@ -1,5 +1,22 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { verifyPassword } from '@/lib/auth';
+import type { YouTubeSearchResult } from '@/types';
+
+type YouTubeSearchApiResponse = {
+  items?: YouTubeSearchItem[];
+};
+
+type YouTubeSearchItem = {
+  id: { videoId: string };
+  snippet: {
+    title: string;
+    channelTitle: string;
+    thumbnails: {
+      medium?: { url: string };
+      default?: { url: string };
+    };
+  };
+};
 
 export async function GET(request: NextRequest) {
   const password = request.headers.get('x-admin-password');
@@ -20,9 +37,12 @@ export async function GET(request: NextRequest) {
   try {
     const keyword = request.nextUrl.searchParams.get('keyword') || '금영노래방';
     const searchQuery = `${q.trim()} ${keyword}`;
-    const needsFilter = keyword !== '금영노래방';
+    // 유튜브 검색 결과에서 TJ 관련 영상 제외 (ex: "TJ노래방", "TJ Karaoke" 등)
+    const excludeTjRegex = /tj/i;
+    // 필터로 인해 결과가 줄어들 수 있어, 기본 maxResults 보다 더 가져옵니다.
+    const maxResultsToFetch = 10;
 
-    const fetchResults = async (maxResults: number) => {
+    const fetchResults = async (maxResults: number): Promise<YouTubeSearchResult[] | null> => {
       const params = new URLSearchParams({
         part: 'snippet',
         q: searchQuery,
@@ -40,24 +60,27 @@ export async function GET(request: NextRequest) {
         return null;
       }
 
-      const data = await res.json();
-      return (data.items || []).map((item: any) => ({
+      const data = (await res.json()) as YouTubeSearchApiResponse;
+      return (data.items || []).map((item) => ({
         videoId: item.id.videoId,
         title: item.snippet.title,
         channelTitle: item.snippet.channelTitle,
-        thumbnailUrl: item.snippet.thumbnails.medium?.url || item.snippet.thumbnails.default?.url,
+        thumbnailUrl:
+          item.snippet.thumbnails.medium?.url ??
+          item.snippet.thumbnails.default?.url ??
+          '',
       }));
     };
 
-    let results = await fetchResults(needsFilter ? 10 : 5);
+    let results = await fetchResults(maxResultsToFetch);
     if (!results) {
       return NextResponse.json({ error: 'YouTube 검색에 실패했습니다' }, { status: 502 });
     }
 
-    // TJ노래방 필터링 (가사 MR 검색 시)
-    if (needsFilter) {
-      results = results.filter((r: any) => !/tj\s*노래방/i.test(r.title));
-    }
+    results = results.filter((r) => {
+      const haystack = `${r.title ?? ''} ${r.channelTitle ?? ''}`;
+      return !excludeTjRegex.test(haystack);
+    });
 
     results = results.slice(0, 5);
 
