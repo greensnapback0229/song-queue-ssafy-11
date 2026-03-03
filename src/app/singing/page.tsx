@@ -8,6 +8,7 @@ import YouTubeBackground, { type YouTubeBackgroundHandle } from '@/components/Si
 import { useTheme } from 'next-themes';
 import { Sun, Moon, MessageSquare, X, Send, Volume2, VolumeX, Play, Pause } from 'lucide-react';
 import { toast } from 'sonner';
+import { playClapSfx, unlockSfx } from '@/lib/sfx';
 
 export default function SingingPage() {
   const { isAdmin, password } = useAdmin();
@@ -32,8 +33,27 @@ export default function SingingPage() {
   const ytRef = useRef<YouTubeBackgroundHandle | null>(null);
   const lastYtPlayerStateRef = useRef<number | null>(null);
 
+  const normalizeChatContent = useCallback((raw: string) => {
+    const trimmed = (raw ?? '').trim();
+    if (/^:clap$/i.test(trimmed)) {
+      return { kind: 'clap' as const, display: '👏👏👏' };
+    }
+    return { kind: 'text' as const, display: raw };
+  }, []);
+
   useEffect(() => {
     setMounted(true);
+  }, []);
+
+  // Unlock audio context once (improves chance that remote-triggered SFX can play)
+  useEffect(() => {
+    const unlock = () => unlockSfx();
+    window.addEventListener('pointerdown', unlock, { once: true });
+    window.addEventListener('keydown', unlock, { once: true });
+    return () => {
+      window.removeEventListener('pointerdown', unlock);
+      window.removeEventListener('keydown', unlock);
+    };
   }, []);
 
   // Fetch current singing session
@@ -78,30 +98,35 @@ export default function SingingPage() {
         if (isMounted) setWsConnected(true);
       };
 
-      ws.onmessage = (event) => {
-        try {
-          const data = JSON.parse(event.data);
-          if (data.type === 'comment') {
-            setComments((prev) => [...prev, {
-              nickname: data.nickname,
-              content: data.content,
-              timestamp: data.timestamp
-            }]);
-          } else if (data.type === 'session_ended') {
-            router.push('/');
-            return;
-          } else if (data.type === 'history') {
-            // 서버에서 기존 댓글 히스토리 수신
-            setComments(data.comments.map((c: { nickname: string; content: string; timestamp: number }) => ({
-              nickname: c.nickname,
-              content: c.content,
-              timestamp: c.timestamp
-            })));
-          }
-        } catch (error) {
-          console.error('Failed to parse WebSocket message:', error);
-        }
-      };
+	      ws.onmessage = (event) => {
+	        try {
+	          const data = JSON.parse(event.data);
+	          if (data.type === 'comment') {
+	            const normalized = normalizeChatContent(String(data.content ?? ''));
+	            if (normalized.kind === 'clap') playClapSfx();
+	            setComments((prev) => [...prev, {
+	              nickname: data.nickname,
+	              content: normalized.display,
+	              timestamp: data.timestamp
+	            }]);
+	          } else if (data.type === 'session_ended') {
+	            router.push('/');
+	            return;
+	          } else if (data.type === 'history') {
+	            // 서버에서 기존 댓글 히스토리 수신
+	            setComments(data.comments.map((c: { nickname: string; content: string; timestamp: number }) => {
+	              const normalized = normalizeChatContent(c.content);
+	              return {
+	                nickname: c.nickname,
+	                content: normalized.display,
+	              timestamp: c.timestamp
+	              };
+	            }));
+	          }
+	        } catch (error) {
+	          console.error('Failed to parse WebSocket message:', error);
+	        }
+	      };
 
       ws.onclose = (event) => {
         console.log(`WebSocket disconnected: code=${event.code}, reason=${event.reason}, wasClean=${event.wasClean}`);
@@ -125,7 +150,7 @@ export default function SingingPage() {
       if (reconnectTimer) clearTimeout(reconnectTimer);
       if (ws) ws.close();
     };
-  }, [session]);
+  }, [session, router, normalizeChatContent]);
 
   // Auto-scroll to newest comment
   useEffect(() => {
