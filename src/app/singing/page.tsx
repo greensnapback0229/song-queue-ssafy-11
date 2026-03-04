@@ -1,13 +1,14 @@
 'use client';
 
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useRef, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import type { SingingSession, Comment } from '@/types';
 import { useAdmin } from '@/context/AdminContext';
-import YouTubeBackground from '@/components/Singing/YouTubeBackground';
+import YouTubeBackground, { type YouTubeBackgroundHandle } from '@/components/Singing/YouTubeBackground';
 import { useTheme } from 'next-themes';
-import { Sun, Moon, MessageSquare, X, Send, Volume2, VolumeX } from 'lucide-react';
+import { Sun, Moon, MessageSquare, X, Send, Volume2, VolumeX, Play, Pause } from 'lucide-react';
 import { toast } from 'sonner';
+import { playClapSfx, unlockSfx } from '@/lib/sfx';
 
 export default function SingingPage() {
   const { isAdmin, password } = useAdmin();
@@ -22,11 +23,37 @@ export default function SingingPage() {
   const [isCompleting, setIsCompleting] = useState(false);
   const [isChatOpen, setIsChatOpen] = useState(true);
   const [bgMuted, setBgMuted] = useState(true);
+  const [ytCurrentTime, setYtCurrentTime] = useState(0);
+  const [ytDuration, setYtDuration] = useState(0);
+  const [ytIsPlaying, setYtIsPlaying] = useState(true);
+  const [isScrubbing, setIsScrubbing] = useState(false);
+  const [scrubTime, setScrubTime] = useState<number | null>(null);
   const wsRef = useRef<WebSocket | null>(null);
   const commentsEndRef = useRef<HTMLDivElement>(null);
+  const ytRef = useRef<YouTubeBackgroundHandle | null>(null);
+  const lastYtPlayerStateRef = useRef<number | null>(null);
+
+  const normalizeChatContent = useCallback((raw: string) => {
+    const trimmed = (raw ?? '').trim();
+    if (/^:clap$/i.test(trimmed)) {
+      return { kind: 'clap' as const, display: '👏👏👏' };
+    }
+    return { kind: 'text' as const, display: raw };
+  }, []);
 
   useEffect(() => {
     setMounted(true);
+  }, []);
+
+  // Unlock audio context once (improves chance that remote-triggered SFX can play)
+  useEffect(() => {
+    const unlock = () => unlockSfx();
+    window.addEventListener('pointerdown', unlock, { once: true });
+    window.addEventListener('keydown', unlock, { once: true });
+    return () => {
+      window.removeEventListener('pointerdown', unlock);
+      window.removeEventListener('keydown', unlock);
+    };
   }, []);
 
   // Fetch current singing session
@@ -71,30 +98,35 @@ export default function SingingPage() {
         if (isMounted) setWsConnected(true);
       };
 
-      ws.onmessage = (event) => {
-        try {
-          const data = JSON.parse(event.data);
-          if (data.type === 'comment') {
-            setComments((prev) => [...prev, {
-              nickname: data.nickname,
-              content: data.content,
-              timestamp: data.timestamp
-            }]);
-          } else if (data.type === 'session_ended') {
-            router.push('/');
-            return;
-          } else if (data.type === 'history') {
-            // 서버에서 기존 댓글 히스토리 수신
-            setComments(data.comments.map((c: { nickname: string; content: string; timestamp: number }) => ({
-              nickname: c.nickname,
-              content: c.content,
-              timestamp: c.timestamp
-            })));
-          }
-        } catch (error) {
-          console.error('Failed to parse WebSocket message:', error);
-        }
-      };
+	      ws.onmessage = (event) => {
+	        try {
+	          const data = JSON.parse(event.data);
+	          if (data.type === 'comment') {
+	            const normalized = normalizeChatContent(String(data.content ?? ''));
+	            if (normalized.kind === 'clap') playClapSfx();
+	            setComments((prev) => [...prev, {
+	              nickname: data.nickname,
+	              content: normalized.display,
+	              timestamp: data.timestamp
+	            }]);
+	          } else if (data.type === 'session_ended') {
+	            router.push('/');
+	            return;
+	          } else if (data.type === 'history') {
+	            // 서버에서 기존 댓글 히스토리 수신
+	            setComments(data.comments.map((c: { nickname: string; content: string; timestamp: number }) => {
+	              const normalized = normalizeChatContent(c.content);
+	              return {
+	                nickname: c.nickname,
+	                content: normalized.display,
+	              timestamp: c.timestamp
+	              };
+	            }));
+	          }
+	        } catch (error) {
+	          console.error('Failed to parse WebSocket message:', error);
+	        }
+	      };
 
       ws.onclose = (event) => {
         console.log(`WebSocket disconnected: code=${event.code}, reason=${event.reason}, wasClean=${event.wasClean}`);
@@ -118,7 +150,7 @@ export default function SingingPage() {
       if (reconnectTimer) clearTimeout(reconnectTimer);
       if (ws) ws.close();
     };
-  }, [session]);
+  }, [session, router, normalizeChatContent]);
 
   // Auto-scroll to newest comment
   useEffect(() => {
@@ -186,6 +218,84 @@ export default function SingingPage() {
     });
   };
 
+  const formatPlaybackTime = (seconds: number) => {
+    const safe = Number.isFinite(seconds) ? Math.max(0, Math.floor(seconds)) : 0;
+    const h = Math.floor(safe / 3600);
+    const m = Math.floor((safe % 3600) / 60);
+    const s = safe % 60;
+    if (h > 0) return `${h}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+    return `${m}:${String(s).padStart(2, '0')}`;
+  };
+
+  // YouTube time polling (for custom scrubber UI)
+  useEffect(() => {
+    if (!session?.youtube_video_id) return;
+
+    const interval = setInterval(() => {
+      const duration = ytRef.current?.getDuration();
+      const current = ytRef.current?.getCurrentTime();
+      const playerState = ytRef.current?.getPlayerState();
+
+      if (typeof duration === 'number' && duration > 0) {
+        setYtDuration(duration);
+      }
+      if (!isScrubbing && typeof current === 'number' && current >= 0) {
+        setYtCurrentTime(current);
+      }
+      if (typeof playerState === 'number' && playerState !== lastYtPlayerStateRef.current) {
+        lastYtPlayerStateRef.current = playerState;
+        // 1: playing, 3: buffering
+        if (playerState === 1 || playerState === 3) setYtIsPlaying(true);
+        if (playerState === 2) setYtIsPlaying(false);
+      }
+    }, 250);
+
+    return () => clearInterval(interval);
+  }, [session?.youtube_video_id, isScrubbing]);
+
+  const togglePlayPause = useCallback(() => {
+    const state = ytRef.current?.getPlayerState();
+    if (state === 2 || (!state && !ytIsPlaying)) {
+      ytRef.current?.play();
+      setYtIsPlaying(true);
+      return;
+    }
+    ytRef.current?.pause();
+    setYtIsPlaying(false);
+  }, [ytIsPlaying]);
+
+  // Keyboard controls: ←/→ to seek ±5s (ignore when typing)
+  useEffect(() => {
+    if (!session?.youtube_video_id) return;
+
+    const isTypingTarget = (target: EventTarget | null) => {
+      if (!target || !(target instanceof HTMLElement)) return false;
+      const tag = target.tagName.toLowerCase();
+      return tag === 'input' || tag === 'textarea' || target.isContentEditable;
+    };
+
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.metaKey || e.ctrlKey || e.altKey) return;
+      if (isTypingTarget(e.target)) return;
+
+      if (e.key === 'ArrowLeft') {
+        e.preventDefault();
+        ytRef.current?.seekBy(-5);
+      }
+      if (e.key === 'ArrowRight') {
+        e.preventDefault();
+        ytRef.current?.seekBy(5);
+      }
+      if (e.code === 'Space' || e.key === ' ') {
+        e.preventDefault();
+        togglePlayPause();
+      }
+    };
+
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [session?.youtube_video_id, togglePlayPause]);
+
   if (!session) {
     return (
       <div className="fixed inset-0 z-50 flex items-center justify-center bg-white dark:bg-gray-950 transition-colors duration-300">
@@ -198,6 +308,7 @@ export default function SingingPage() {
   }
 
   const hasVideo = !!session.youtube_video_id;
+  const displayTime = isScrubbing ? (scrubTime ?? ytCurrentTime) : ytCurrentTime;
 
   return (
     <div className="fixed inset-0 z-50 flex bg-white dark:bg-gray-950 overflow-hidden font-sans transition-colors duration-300">
@@ -272,11 +383,80 @@ export default function SingingPage() {
         {/* 배경 레이어 */}
         {hasVideo ? (
           <>
-            <YouTubeBackground videoId={session.youtube_video_id!} muted={bgMuted} />
-            <div className="absolute inset-0 bg-black/10 dark:bg-black/35 z-10 transition-colors duration-300" />
+            <YouTubeBackground ref={ytRef} videoId={session.youtube_video_id!} muted={bgMuted} />
+            <div className="absolute inset-0 bg-black/10 z-10 transition-colors duration-300" />
           </>
         ) : (
           <div className="absolute inset-0 bg-gradient-to-br from-gray-50 via-white to-gray-100 dark:from-gray-900 dark:via-gray-950 dark:to-black transition-colors duration-300" />
+        )}
+
+        {/* Custom YouTube controls (background-friendly) */}
+        {hasVideo && (
+          <div className="absolute bottom-4 left-4 right-4 z-40">
+            <div className="mx-auto max-w-5xl">
+              <div className="rounded-3xl border border-gray-200/70 dark:border-white/10 bg-white/70 dark:bg-black/30 backdrop-blur-xl px-4 py-3 shadow-lg">
+	                <div className="flex items-center gap-3">
+	                  <button
+	                    type="button"
+	                    onClick={() => ytRef.current?.seekBy(-5)}
+	                    className="h-10 px-3 rounded-2xl bg-gray-100/90 dark:bg-white/10 hover:bg-gray-200/90 dark:hover:bg-white/20 border border-gray-200/70 dark:border-white/10 font-black text-xs transition-all active:scale-[0.98]"
+                    aria-label="5초 뒤로"
+                    title="← 5초"
+                  >
+	                    -5s
+	                  </button>
+
+	                  <button
+	                    type="button"
+	                    onClick={togglePlayPause}
+	                    className="w-10 h-10 rounded-2xl bg-gray-100/90 dark:bg-white/10 hover:bg-gray-200/90 dark:hover:bg-white/20 border border-gray-200/70 dark:border-white/10 flex items-center justify-center transition-all active:scale-[0.98]"
+	                    aria-label={ytIsPlaying ? '일시정지' : '재생'}
+	                    title="Space"
+	                  >
+	                    {ytIsPlaying ? <Pause size={16} /> : <Play size={16} className="ml-0.5" />}
+	                  </button>
+
+	                  <div className="flex-1 min-w-0">
+	                    <input
+	                      type="range"
+	                      min={0}
+                      max={ytDuration > 0 ? Math.floor(ytDuration) : 0}
+	                      value={ytDuration > 0 ? Math.min(Math.floor(displayTime), Math.floor(ytDuration)) : 0}
+	                      disabled={ytDuration <= 0}
+	                      onPointerDown={() => setIsScrubbing(true)}
+	                      onChange={(e) => setScrubTime(Number(e.target.value))}
+	                      onPointerUp={(e) => {
+	                        const next = Number((e.currentTarget as HTMLInputElement).value);
+	                        ytRef.current?.seekTo(next);
+	                        setIsScrubbing(false);
+	                        setScrubTime(null);
+	                      }}
+	                      onPointerCancel={() => {
+	                        setIsScrubbing(false);
+	                        setScrubTime(null);
+	                      }}
+	                      className="w-full accent-toss-blue disabled:opacity-40"
+	                      aria-label="재생 위치"
+	                    />
+                    <div className="mt-1 flex items-center justify-between text-[11px] font-bold text-gray-600 dark:text-gray-300 tabular-nums">
+                      <span>{formatPlaybackTime(displayTime)}</span>
+                      <span>{ytDuration > 0 ? formatPlaybackTime(ytDuration) : '--:--'}</span>
+                    </div>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => ytRef.current?.seekBy(5)}
+                    className="h-10 px-3 rounded-2xl bg-gray-100/90 dark:bg-white/10 hover:bg-gray-200/90 dark:hover:bg-white/20 border border-gray-200/70 dark:border-white/10 font-black text-xs transition-all active:scale-[0.98]"
+                    aria-label="5초 앞으로"
+                    title="→ 5초"
+                  >
+                    +5s
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
         )}
       </div>
 
