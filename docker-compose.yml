@@ -2,7 +2,7 @@ version: '3.8'
 
 services:
   song-queue:
-    build: .
+    build: ./song-queue
     container_name: song-queue
     ports:
       - "45000:3000"
@@ -10,11 +10,27 @@ services:
       - song-queue-data:/app/data
     restart: unless-stopped
     env_file:
-      - password.env
+      - ./song-queue/password.env
     environment:
       - NODE_ENV=production
       - PORT=3000
 
+  baekjoon-viewer:
+    build: ./baekjoon-viewer
+    container_name: baekjoon-viewer
+    ports:
+      - "45001:3000"
+    volumes:
+      - baekjoon-data:/app/data
+      - /projects/baekjoon-crawling/problems:/data/problems:ro
+    restart: unless-stopped
+    environment:
+      - NODE_ENV=production
+      - PROBLEMS_DIR=/data/problems
+      - DB_PATH=/app/data/baekjoon.db
+
 volumes:
   song-queue-data:
+    driver: local
+  baekjoon-data:
     driver: local
