@@ -25,7 +25,10 @@ ENV DB_PATH=/app/data/baekjoon.db
 
 COPY --from=builder /app/.next/standalone ./
 COPY --from=builder /app/.next/static ./.next/static
-COPY --from=builder /app/public ./public
+
+# public 디렉토리가 있으면 복사
+RUN mkdir -p ./public
+COPY --from=builder /app/public/ ./public/
 
 RUN mkdir -p /app/data /data/problems
 
