@@ -17,7 +17,7 @@ services:
     build: ./baekjoon-viewer
     container_name: baekjoon-viewer
     ports:
-      - "45001:3000"
+      - "45002:3000"
     volumes:
       - baekjoon-data:/app/data
       - /projects/baekjoon-crawling/problems:/data/problems:ro
